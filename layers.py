@@ -3,31 +3,36 @@ import numpy as np
 from utils import parametric_relu
 
 
-# klappt anscheinend noch nicht richtig bei batch size > 1
-def upsample_with_indices(values, indices, filters=0, name="upsampling"):
+def max_unpooling(values, indices, strides, name="upsampling"):
     """
-    max-unpooling layer for segnet. Creates a sparse tensor with shape (values[0], values[1]*2, values[2]*2, values[3])
+    max-unpooling layer for segnet. Creates a sparse tensor with shape values.shape * strides
 
     :param values: Input Tensor
     :param indices: Indices of max pooling
+    :param strides: strides that were used in the corresponding max_pooling layer
     :param name: Name of the Operation
     :return: Sparse Tensor containing values at indices
     """
     with tf.variable_scope(name):
-        flat_val = tf.reshape(values, shape=[-1])
-        flat_ind = tf.cast(tf.reshape(indices, shape=[-1]), tf.int32)
-        flat_shape = tf.shape(flat_val) * 4
+        v_shape = values.get_shape().as_list()
+        indices = tf.cast(indices, tf.int32)
+        out_shape = [tf.shape(values)[0] * strides[0],
+                     v_shape[1] * strides[1],
+                     v_shape[2] * strides[2],
+                     v_shape[3] * strides[3]]
 
-        flat_result = tf.sparse_to_dense(flat_ind, flat_shape, flat_val, validate_indices=False)
+        i = tf.constant(1)
+        m = tf.zeros([1] + v_shape[1:], dtype=tf.int32)
+        cond = lambda i, m: i < out_shape[0]
+        body = lambda i, m: [i+1, tf.concat([m, tf.fill([1] + v_shape[1:], i)], axis=0)]
+        _, b = tf.while_loop(cond, body, [i, m], shape_invariants=[i.get_shape(), tf.TensorShape([None] + v_shape[1:])])
+        y = indices // (out_shape[2]*out_shape[3])
+        x = indices % (out_shape[2]*out_shape[3]) // out_shape[3]
+        c = indices % out_shape[3]
+        formatted_indices = tf.transpose(tf.stack([b, y, x, c]), (1, 2, 3, 4, 0))
 
-        out_shape = [tf.shape(values)[0], values.get_shape().as_list()[1] * 2, values.get_shape().as_list()[2] * 2, values.get_shape().as_list()[3]]
-        result = tf.reshape(flat_result, out_shape)
+        result = tf.scatter_nd(formatted_indices, values, out_shape)
 
-        if filters == 0:
-            filters = out_shape[-1]
-
-        result = tf.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding="same", trainable=False,
-                                  kernel_initializer=bilinear_initializer(3, filters), use_bias=False)(result)
         return result
 
 
@@ -83,7 +88,7 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
             conv1 = tf.layers.Conv2DTranspose(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", name="conv1")(input)
             conv1 = parametric_relu(conv1, name + "_conv1_prelu")
 
-            input = upsample_with_indices(input, upsampling_indices, filters=filters)
+            input = max_unpooling(input, upsampling_indices, strides=(1, 2, 2, 1))
             input = tf.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding="same", use_bias=False)(input)
 
         else:

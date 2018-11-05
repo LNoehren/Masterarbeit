@@ -1,9 +1,9 @@
 import tensorflow as tf
-from layers import upsample_with_indices, conv_bn
+from layers import max_unpooling, conv_bn
 
 
 def segnet(image, *, n_classes=7):
-    max_unpooling=True
+    use_max_unpooling=True
     with tf.variable_scope("segnet"):
 
         # encoder
@@ -37,8 +37,8 @@ def segnet(image, *, n_classes=7):
         dropout3 = tf.layers.Dropout(0.5, name="dropout3")(pool5)
 
         # decoder
-        if max_unpooling:
-            upsample1 = upsample_with_indices(dropout3, index5, name="upsample1")
+        if use_max_unpooling:
+            upsample1 = max_unpooling(dropout3, index5, strides=(1, 2, 2, 1), name="upsample1")
         else:
             upsample1 = tf.layers.Conv2DTranspose(filters=512, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", name="up_conv1")(dropout3)
         conv6_1 = conv_bn(upsample1, filters=512, kernel_size=(3, 3), padding="same", name="conv6_1")
@@ -47,8 +47,8 @@ def segnet(image, *, n_classes=7):
 
         dropout4 = tf.layers.Dropout(0.5, name="dropout4")(conv6_3)
 
-        if max_unpooling:
-            upsample2 = upsample_with_indices(dropout4, index4, name="upsample2")
+        if use_max_unpooling:
+            upsample2 = max_unpooling(dropout4, index4, strides=(1, 2, 2, 1), name="upsample2")
         else:
             upsample2 = tf.layers.Conv2DTranspose(filters=256, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", name="up_conv2")(dropout4)
         conv7_1 = conv_bn(upsample2, filters=256, kernel_size=(3, 3), padding="same", name="conv7_1")
@@ -57,8 +57,8 @@ def segnet(image, *, n_classes=7):
 
         dropout5 = tf.layers.Dropout(0.5, name="dropout5")(conv7_3)
 
-        if max_unpooling:
-            upsample3 = upsample_with_indices(dropout5, index3, name="upsample3")
+        if use_max_unpooling:
+            upsample3 = max_unpooling(dropout5, index3, strides=(1, 2, 2, 1), name="upsample3")
         else:
             upsample3 = tf.layers.Conv2DTranspose(filters=128, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", name="up_conv3")(dropout5)
         conv8_1 = conv_bn(upsample3, filters=128, kernel_size=(3, 3), padding="same", name="conv8_1")
@@ -67,15 +67,15 @@ def segnet(image, *, n_classes=7):
 
         dropout6 = tf.layers.Dropout(0.5, name="dropout6")(conv8_3)
 
-        if max_unpooling:
-            upsample4 = upsample_with_indices(dropout6, index2, name="upsample4")
+        if use_max_unpooling:
+            upsample4 = max_unpooling(dropout6, index2, strides=(1, 2, 2, 1), name="upsample4")
         else:
             upsample4 = tf.layers.Conv2DTranspose(filters=64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", name="up_conv4")(dropout6)
         conv9_1 = conv_bn(upsample4, filters=64, kernel_size=(3, 3), padding="same", name="conv9_1")
         conv9_2 = conv_bn(conv9_1, filters=64, kernel_size=(3, 3), padding="same", name="conv9_2")
 
-        if max_unpooling:
-            upsample5 = upsample_with_indices(conv9_2, index1, name="upsample5")
+        if use_max_unpooling:
+            upsample5 = max_unpooling(conv9_2, index1, strides=(1, 2, 2, 1), name="upsample5")
         else:
             upsample5 = tf.layers.Conv2DTranspose(filters=32, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", name="up_conv5")(conv9_2)
         conv10_1 = conv_bn(upsample5, filters=32, kernel_size=(3, 3), padding="same", name="conv10_1")
