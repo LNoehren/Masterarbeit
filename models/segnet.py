@@ -1,5 +1,5 @@
 import tensorflow as tf
-from layers import max_unpooling, conv_bn
+from layers import max_unpooling, conv_bn, spatial_dropout
 
 
 def segnet(image, *, n_classes=7):
@@ -20,21 +20,21 @@ def segnet(image, *, n_classes=7):
         conv3_3 = conv_bn(conv3_2, filters=256, kernel_size=(3, 3), padding="same", name="conv3_3")
         pool3, index3 = tf.nn.max_pool_with_argmax(input=conv3_3, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding="SAME", name="max_pool3")
 
-        dropout1 = tf.layers.Dropout(0.5, name="dropout1")(pool3)
+        dropout1 = spatial_dropout(pool3, 0.5, name="dropout1")
 
         conv4_1 = conv_bn(dropout1, filters=512, kernel_size=(3, 3), padding="same", name="conv4_1")
         conv4_2 = conv_bn(conv4_1, filters=512, kernel_size=(3, 3), padding="same", name="conv4_2")
         conv4_3 = conv_bn(conv4_2, filters=512, kernel_size=(3, 3), padding="same", name="conv4_3")
         pool4, index4 = tf.nn.max_pool_with_argmax(input=conv4_3, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding="SAME", name="max_pool4")
 
-        dropout2 = tf.layers.Dropout(0.5, name="dropout2")(pool4)
+        dropout2 = spatial_dropout(pool4, 0.5, name="dropout2")
 
         conv5_1 = conv_bn(dropout2, filters=512, kernel_size=(3, 3), padding="same", name="conv5_1")
         conv5_2 = conv_bn(conv5_1, filters=512, kernel_size=(3, 3), padding="same", name="conv5_2")
         conv5_3 = conv_bn(conv5_2, filters=512, kernel_size=(3, 3), padding="same", name="conv5_3")
         pool5, index5 = tf.nn.max_pool_with_argmax(input=conv5_3, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding="SAME", name="max_pool5")
 
-        dropout3 = tf.layers.Dropout(0.5, name="dropout3")(pool5)
+        dropout3 = spatial_dropout(pool5, 0.5, name="dropout3")
 
         # decoder
         if use_max_unpooling:
@@ -45,7 +45,7 @@ def segnet(image, *, n_classes=7):
         conv6_2 = conv_bn(conv6_1, filters=512, kernel_size=(3, 3), padding="same", name="conv6_2")
         conv6_3 = conv_bn(conv6_2, filters=512, kernel_size=(3, 3), padding="same", name="conv6_3")
 
-        dropout4 = tf.layers.Dropout(0.5, name="dropout4")(conv6_3)
+        dropout4 = spatial_dropout(conv6_3, 0.5, name="dropout4")
 
         if use_max_unpooling:
             upsample2 = max_unpooling(dropout4, index4, strides=(1, 2, 2, 1), name="upsample2")
@@ -55,7 +55,7 @@ def segnet(image, *, n_classes=7):
         conv7_2 = conv_bn(conv7_1, filters=256, kernel_size=(3, 3), padding="same", name="conv7_2")
         conv7_3 = conv_bn(conv7_2, filters=256, kernel_size=(3, 3), padding="same", name="conv7_3")
 
-        dropout5 = tf.layers.Dropout(0.5, name="dropout5")(conv7_3)
+        dropout5 = spatial_dropout(conv7_3, 0.5, name="dropout5")
 
         if use_max_unpooling:
             upsample3 = max_unpooling(dropout5, index3, strides=(1, 2, 2, 1), name="upsample3")
@@ -65,7 +65,7 @@ def segnet(image, *, n_classes=7):
         conv8_2 = conv_bn(conv8_1, filters=128, kernel_size=(3, 3), padding="same", name="conv8_2")
         conv8_3 = conv_bn(conv8_2, filters=128, kernel_size=(3, 3), padding="same", name="conv8_3")
 
-        dropout6 = tf.layers.Dropout(0.5, name="dropout6")(conv8_3)
+        dropout6 = spatial_dropout(conv8_3, 0.5, name="dropout6")
 
         if use_max_unpooling:
             upsample4 = max_unpooling(dropout6, index2, strides=(1, 2, 2, 1), name="upsample4")

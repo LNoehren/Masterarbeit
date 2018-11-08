@@ -1,4 +1,5 @@
 import tensorflow as tf
+from layers import spatial_dropout
 
 
 def u_net(image, *, n_classes=7):
@@ -21,12 +22,12 @@ def u_net(image, *, n_classes=7):
         conv4_2 = tf.layers.Conv2D(filters=512, kernel_size=(3, 3), padding="same", activation="relu", name="conv4_2")(conv4_1)
         pool4 = tf.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="same", name="max_pool4")(conv4_2)
 
-        dropout1 = tf.layers.Dropout(0.5, name="dropout1")(pool4)
+        dropout1 = spatial_dropout(pool4, 0.5, name="dropout1")
 
         conv5_1 = tf.layers.Conv2D(filters=1024, kernel_size=(3, 3), padding="same", activation="relu", name="conv5_1")(dropout1)
         conv5_2 = tf.layers.Conv2D(filters=1024, kernel_size=(3, 3), padding="same", activation="relu", name="conv5_2")(conv5_1)
 
-        dropout2 = tf.layers.Dropout(0.5, name="dropout2")(conv5_2)
+        dropout2 = spatial_dropout(conv5_2, 0.5, name="dropout2")
 
         # decoder
         up_conv1 = tf.layers.Conv2DTranspose(filters=512, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", name="up_conv1")(dropout2)
@@ -53,6 +54,6 @@ def u_net(image, *, n_classes=7):
         conv9_1 = tf.layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same", activation="relu", name="conv9_1")(merge4)
         conv9_2 = tf.layers.Conv2D(filters=64, kernel_size=(3, 3), padding="same", activation="relu", name="conv9_2")(conv9_1)
 
-    final_conv = tf.layers.Conv2D(filters=n_classes, kernel_size=(1, 1), activation="softmax", name="classes")(conv9_2)
+        final_conv = tf.layers.Conv2D(filters=n_classes, kernel_size=(1, 1), activation="softmax", name="classes")(conv9_2)
 
     return final_conv

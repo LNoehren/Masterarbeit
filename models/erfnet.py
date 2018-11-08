@@ -34,6 +34,6 @@ def erfnet(image, *, n_classes=7):
         non_bt_1d_4_1 = non_bt_1d(up_conv2, 16, name="non_bt_1d_4_1")
         non_bt_1d_4_2 = non_bt_1d(non_bt_1d_4_1, 16, name="non_bt_1d_4_2")
 
-    up_conv3 = tf.layers.Conv2DTranspose(filters=n_classes, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="softmax", name="up_conv2")(non_bt_1d_4_2)
+        up_conv3 = tf.layers.Conv2DTranspose(filters=n_classes, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="softmax", name="up_conv2")(non_bt_1d_4_2)
 
     return up_conv3

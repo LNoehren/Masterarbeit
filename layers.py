@@ -3,7 +3,7 @@ import numpy as np
 from utils import parametric_relu
 
 
-def max_unpooling(values, indices, strides, name="upsampling"):
+def max_unpooling(values, indices, strides, name="max_unpooling"):
     """
     max-unpooling layer for segnet. Creates a sparse tensor with shape values.shape * strides
 
@@ -62,23 +62,24 @@ def bilinear_initializer(kernel_size, num_channels):
 
 def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indices=None, dilation=1, asymmetric=False, name="bottleneck"):
     """
-    bottleneck block for e-net.
+    bottleneck block for e-net. It can perform downsampling or upsampling and can use normal, dilated or asymmetric
+    convolutions. Returns the output of the block and if downsampling was performed also the max_pooling indices.
 
     :param input: input Tensor
     :param filters: number of filters of the Convolutions
     :param dropout_rate: dropout rate for the dropout layer
     :param downsampling: whether or not the block should perform downsampling
+    :param upsampling_indices: Performs max_unpooling with these indices if they are not None
     :param dilation: dilation rate of the convolution
     :param asymmetric: whether the central convolution should be symmetric (3x3) or two asymmetric convolutions (5x1, 1x5)
     :param name: name of the block
     :return: output of the bottleneck block
     """
     with tf.variable_scope(name):
-        small_filter = int(filters/4)
+        small_filter = filters // 4
 
         if downsampling:
             conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", name="conv1")(input)
-            conv1 = parametric_relu(conv1, name + "_conv1_prelu")
 
             input, index = tf.nn.max_pool_with_argmax(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding="SAME", name="max_pool")
             padding_size = (filters - input.get_shape().as_list()[-1])
@@ -86,14 +87,14 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
 
         elif upsampling_indices is not None:
             conv1 = tf.layers.Conv2DTranspose(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", name="conv1")(input)
-            conv1 = parametric_relu(conv1, name + "_conv1_prelu")
 
+            input = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), padding="same", use_bias=False)(input)
             input = max_unpooling(input, upsampling_indices, strides=(1, 2, 2, 1))
-            input = tf.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding="same", use_bias=False)(input)
 
         else:
             conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", name="conv1")(input)
-            conv1 = parametric_relu(conv1, name + "_conv1_prelu")
+
+        conv1 = parametric_relu(conv1, name + "_conv1_prelu")
         bn1 = tf.layers.BatchNormalization(name="bn1")(conv1)
 
         if asymmetric:
@@ -108,7 +109,7 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
         bn2 = tf.layers.BatchNormalization(name="bn2")(conv2)
         conv3 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), use_bias=False, padding="same", name="conv3")(bn2)
 
-        dropout = tf.layers.Dropout(dropout_rate, name="dropout")(conv3)
+        dropout = spatial_dropout(conv3, dropout_rate)
 
         out = input + dropout
         out = parametric_relu(out, name + "_out_prelu")
@@ -152,7 +153,7 @@ def non_bt_1d(input, filters, dilation_rate=1, name="non_bt_1D"):
         conv2 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 3), padding="same", activation="relu", name="conv2")(conv1)
         conv3 = tf.layers.Conv2D(filters=filters, kernel_size=(3, 1), padding="same", dilation_rate=dilation_rate, activation="relu", name="conv3")(conv2)
         conv4 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 3), padding="same", dilation_rate=dilation_rate, activation="relu", name="conv4")(conv3)
-        dropout = tf.layers.Dropout(0.3, name="dropout")(conv4)
+        dropout = spatial_dropout(conv4, 0.3, name="dropout")
 
         result = tf.nn.relu(input + dropout, name="relu")
         return result
@@ -173,3 +174,7 @@ def conv_bn(input, name, **kwargs):
         act = tf.nn.relu(bn)
 
         return act
+
+
+def spatial_dropout(input, dropout_rate, name="dropout"):
+    return tf.layers.Dropout(dropout_rate, noise_shape=[1, tf.shape(input)[1], tf.shape(input)[2], 1], name=name)(input)
