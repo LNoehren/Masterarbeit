@@ -111,7 +111,6 @@ def compute_mean_class_iou(iou_list):
     return result_list
 
 
-
 def weighted_categorical_cross_entropy(y_true, y_pred, use_weights=True):
     """
     categorical cross entropy with class weights computed the same way as in the vocalfolds paper.

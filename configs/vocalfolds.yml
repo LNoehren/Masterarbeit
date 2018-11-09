@@ -1,0 +1,13 @@
+model_structure: enet
+dataset_path: /home/lennard/Datasets/vocalfolds-master/img/
+epochs: 200
+learning_rate: 1e-4
+batch_sizes:
+  train: 1
+  validation: 1
+  test: 1
+image_size:
+  - 512
+  - 512
+classes: 7
+class_weigths: True

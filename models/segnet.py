@@ -81,6 +81,6 @@ def segnet(image, *, n_classes=7):
         conv10_1 = conv_bn(upsample5, filters=32, kernel_size=(3, 3), padding="same", name="conv10_1")
         conv10_2 = conv_bn(conv10_1, filters=32, kernel_size=(3, 3), padding="same", name="conv10_2")
 
-    final_conv = tf.layers.Conv2D(filters=n_classes, kernel_size=(1, 1), activation="softmax", name="classes")(conv10_2)
+        final_conv = tf.layers.Conv2D(filters=n_classes, kernel_size=(1, 1), activation="softmax", name="classes")(conv10_2)
 
     return final_conv

@@ -1,9 +1,5 @@
 import tensorflow as tf
 from utils import get_file_list, write_overlayed_result, compute_mean_class_iou
-from models.u_net import u_net
-from models.segnet import segnet
-from models.enet import e_net
-from models.erfnet import erfnet
 import numpy as np
 from random import shuffle
 from tqdm import tqdm
@@ -13,19 +9,20 @@ from models.model import Model
 import argparse
 from tensorflow.python import debug as tf_debug
 from data_generation import DataGenerator
+from configuration import Configuration
 
 
-def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rate, width, height, n_classes, load_path=None, debug=False, use_class_weights=True):
-    model = Model(width, height, n_classes, model_structure, use_class_weights)
+def main(config):
+    model = Model(config.image_size[0], config.image_size[1], config.n_classes, config.model_structure, config.use_class_weights)
     saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
 
-    train_paths = get_file_list(dataset_root + "train")
-    val_paths = get_file_list(dataset_root + "val")
-    test_paths = get_file_list(dataset_root + "test")
+    train_paths = get_file_list(config.dataset_path + "train")
+    val_paths = get_file_list(config.dataset_path + "val")
+    test_paths = get_file_list(config.dataset_path + "test")
 
-    train_steps = int(len(train_paths) / batch_sizes[0])
-    val_steps = int(len(val_paths) / batch_sizes[1])
-    test_steps = int(len(test_paths) / batch_sizes[2])
+    train_steps = int(len(train_paths) / config.batch_sizes["train"])
+    val_steps = int(len(val_paths) / config.batch_sizes["validation"])
+    test_steps = int(len(test_paths) / config.batch_sizes["test"])
 
     best_val_iou = -1
     no_improve_count = 0
@@ -35,28 +32,22 @@ def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rat
     os.makedirs(result_dir + "saved_model")
     log_file = result_dir + "train_log.csv"
 
-    with open(result_dir + "config", "w") as config_writer:
-        config_writer.write("Model: {}\n".format(model.__name__))
-        config_writer.write("Epochs: {}\n".format(number_epochs))
-        config_writer.write("Dataset: {}\n".format(dataset_root))
-        config_writer.write("Batch sizes: {}\n".format(batch_sizes))
-        config_writer.write("Starting lr: {}\n".format(learning_rate))
-        config_writer.write("Loaded weights: {}".format(load_path))
+    config.save_config(result_dir + "config.yml")
 
     with tf.Session() as sess:
-        if debug:
+        if config.debug:
             sess = tf_debug.LocalCLIDebugWrapperSession(sess)
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
 
-        if load_path is not None:
-            saver.restore(sess, load_path)
+        if config.load_path is not None:
+            saver.restore(sess, config.load_path)
             print("Model restored.")
 
         with open(log_file, "w") as log:
             log.write("Epoch,Train_loss,Train_iou,Val_loss,Val_iou\n")
 
-        for epoch in range(number_epochs):
+        for epoch in range(config.epochs):
             shuffle(train_paths)
             train_loss_list = []
             train_iou_list = []
@@ -64,21 +55,21 @@ def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rat
             val_iou_list = []
             class_iou_list = []
 
-            print("Epoch {}/{}:".format(epoch+1, number_epochs))
+            print("Epoch {}/{}:".format(epoch+1, config.epochs))
             print("Starting training")
-            train_data_gen = DataGenerator(train_paths, batch_sizes[0], 8, use_augs=False)
+            train_data_gen = DataGenerator(train_paths, config.batch_sizes["train"], config.n_processes, use_augs=config.use_augs)
 
             for step in tqdm(range(train_steps)):
                 image_batch, gt_batch = train_data_gen.__next__()
 
-                train_loss, train_iou = model.training(sess, image_batch, gt_batch, learning_rate)
+                train_loss, train_iou = model.training(sess, image_batch, gt_batch, config.learning_rate)
                 train_loss_list.append(np.mean(train_loss))
                 train_iou_list.append(train_iou)
 
             train_data_gen.stop()
 
             print("Starting validation")
-            val_data_gen = DataGenerator(val_paths, batch_sizes[1], 8)
+            val_data_gen = DataGenerator(val_paths, config.batch_sizes["validation"], config.n_processes)
 
             for step in tqdm(range(val_steps)):
                 image_batch, gt_batch = val_data_gen.__next__()
@@ -111,9 +102,9 @@ def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rat
                 # lower learning rate if no improvements in 5 epochs
                 no_improve_count += 1
                 if no_improve_count > 5:
-                    if learning_rate > 1e-7:
-                        learning_rate *= 0.8
-                        print("lowered learning rate to {}".format(learning_rate))
+                    if config.learning_rate > 1e-7:
+                        config.learning_rate *= 0.8
+                        print("lowered learning rate to {}".format(config.learning_rate))
                     no_improve_count = 0
 
         os.makedirs(result_dir + "test_images/")
@@ -122,7 +113,7 @@ def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rat
         test_iou_list = []
         class_iou_list = []
         print("Starting test")
-        test_data_gen = DataGenerator(test_paths, batch_sizes[2], 8)
+        test_data_gen = DataGenerator(test_paths, config.batch_sizes["test"], config.n_processes)
 
         for step in tqdm(range(test_steps)):
             image_batch, gt_batch = test_data_gen.__next__()
@@ -132,8 +123,8 @@ def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rat
             test_iou_list.append(test_iou)
             class_iou_list.append(class_ious)
 
-            for b in range(batch_sizes[2]):
-                result_path = result_dir + "test_images/" + test_paths[step * batch_sizes[2] + b].split('/')[-1]
+            for b in range(config.batch_sizes["test"]):
+                result_path = result_dir + "test_images/" + test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
                 write_overlayed_result(result[b, :, :, :], image_batch[b, :, :, :], result_path)
 
         test_data_gen.stop()
@@ -143,52 +134,19 @@ def main(model_structure, dataset_root, number_epochs, batch_sizes, learning_rat
         print("class ious: {}".format(mean_class_iou))
 
         with open(log_file, "a") as log:
-            log.write(",Test_loss,Test_iou,,\n")
-            log.write(",{},{},,\n".format(np.mean(test_loss_list), np.mean(test_iou_list)))
+            log.write("Test_loss,Test_iou")
+            for i in range(len(mean_class_iou)):
+                log.write(",{}".format(i))
+            log.write("\n{},{}".format(np.mean(test_loss_list), np.mean(test_iou_list)))
+            for class_iou in mean_class_iou:
+                log.write(",{}".format(class_iou))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Perform a semantic Segmentation Training and Evaluation')
-    parser.add_argument("model_structure", type=str,
-                        help="The model structure that should be used. "
-                             "Supported structures are 'unet', 'segnet', 'enet' and 'erfnet'.")
-    parser.add_argument("epochs", type=int,
-                        help="The number of training epochs. Chose 0 to only perform tests.")
-    parser.add_argument("dataset_path", type=str,
-                        help="The path to the dataset image root directory.")
-    parser.add_argument("train_batch_size", type=int,
-                        help='The train batch size.')
-    parser.add_argument("val_batch_size", type=int,
-                        help='The validation batch size.')
-    parser.add_argument("test_batch_size", type=int,
-                        help='The test batch size.')
-    parser.add_argument("-lr", "--learning_rate", dest="lr", type=float, default=1e-3,
-                        help='The starting learning rate for the training. Set to 1e-3 by default.')
-    parser.add_argument("-l", "--load_path", dest="load_path", type=str, default=None,
-                        help="Path to a model checkpoint that should be loaded at the beginning.")
-    parser.add_argument("--height", dest="height", type=int, default=512,
-                        help="Height of the images of the Dataset.")
-    parser.add_argument("--width", dest="width", type=int, default=512,
-                        help="Width of the images of the Dataset.")
-    parser.add_argument("--n_classes", dest="n_classes", type=int, default=7,
-                        help="Number of classes in the Dataset.")
-    parser.add_argument("--debug", action="store_true",
-                        help="Activate tensorflow debugger.")
+    parser.add_argument("config_path", type=str,
+                        help="The path to the config file for the Experiment. Check the Configuration class "
+                             "for format information.")
     args = parser.parse_args()
+    main(Configuration(args.config_path))
 
-    if args.model_structure == "unet":
-        model_structure = u_net
-    elif args.model_structure == "segnet":
-        model_structure = segnet
-    elif args.model_structure == "enet":
-        model_structure = e_net
-    elif args.model_structure == "erfnet":
-        model_structure = erfnet
-    else:
-        raise AttributeError("Unknown model structure: {}".format(args.model_structure))
-
-    bs = (args.train_batch_size, args.val_batch_size, args.test_batch_size)
-
-    assert os.path.isdir(args.dataset_path), "Invalid Dataset path: {}".format(args.dataset_path)
-
-    main(model_structure, args.dataset_path, args.epochs, bs, args.lr, args.height, args.width, args.n_classes, args.load_path, args.debug, use_class_weights=True)

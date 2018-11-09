@@ -98,12 +98,12 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
         bn1 = tf.layers.BatchNormalization(name="bn1")(conv1)
 
         if asymmetric:
-            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(5, 1), use_bias=False, padding="same", dilation_rate=dilation, name="conv2")(bn1)
+            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(5, 1), padding="same", dilation_rate=dilation, name="conv2")(bn1)
             conv2 = parametric_relu(conv2, name + "_conv2_prelu1")
-            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 5), use_bias=False, padding="same", dilation_rate=dilation, name="conv2")(conv2)
+            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 5), padding="same", dilation_rate=dilation, name="conv2")(conv2)
             conv2 = parametric_relu(conv2, name + "_conv2_prelu2")
         else:
-            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(3, 3), use_bias=False, padding="same", dilation_rate=dilation, name="conv2")(bn1)
+            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(3, 3), padding="same", dilation_rate=dilation, name="conv2")(bn1)
             conv2 = parametric_relu(conv2, name + "_conv2_prelu")
 
         bn2 = tf.layers.BatchNormalization(name="bn2")(conv2)
