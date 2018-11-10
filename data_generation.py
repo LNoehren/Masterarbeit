@@ -27,6 +27,7 @@ class DataGenerator:
         self.n_processes = n_processes
         self.batch_size = batch_size
         self.path_list = path_list
+        assert self.path_list, "No images found at given Path!"
         self.use_augs = use_augs
         self.master_thread = Thread(target=self.generation_loop, args=[self.queue])
         self.master_thread.start()

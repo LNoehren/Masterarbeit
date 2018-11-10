@@ -1,0 +1,13 @@
+model_structure: erfnet
+dataset_path: /home/lennard/Datasets/Cityscapes/img/
+epochs: 1
+learning_rate: 1e-4
+batch_sizes:
+  train: 1
+  validation: 1
+  test: 1
+image_size:
+  - 512
+  - 1024
+n_classes: 19
+class_weights: False

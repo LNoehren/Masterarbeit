@@ -123,9 +123,11 @@ def main(config):
             test_iou_list.append(test_iou)
             class_iou_list.append(class_ious)
 
-            for b in range(config.batch_sizes["test"]):
-                result_path = result_dir + "test_images/" + test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
-                write_overlayed_result(result[b, :, :, :], image_batch[b, :, :, :], result_path)
+            # result images are only implemented for vocalfolds dataset
+            if config.use_class_weights:
+                for b in range(config.batch_sizes["test"]):
+                    result_path = result_dir + "test_images/" + test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
+                    write_overlayed_result(result[b, :, :, :], image_batch[b, :, :, :], result_path)
 
         test_data_gen.stop()
 
