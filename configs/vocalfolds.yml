@@ -1,4 +1,4 @@
-model_structure: enet
+model_structure: e_net
 dataset_path: /home/lennard/Datasets/vocalfolds-master/img/
 epochs: 200
 learning_rate: 1e-4
@@ -11,3 +11,4 @@ image_size:
   - 512
 classes: 7
 class_weigths: True
+#load_path: results/e_net_18-11-09_143538/saved_model/model.ckpt

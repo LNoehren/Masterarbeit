@@ -90,6 +90,7 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
 
             input = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), padding="same", use_bias=False)(input)
             input = max_unpooling(input, upsampling_indices, strides=(1, 2, 2, 1))
+            input = tf.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding="same", use_bias=False)(input)
 
         else:
             conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", name="conv1")(input)

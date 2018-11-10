@@ -1,7 +1,7 @@
 import yaml
 from models.u_net import u_net
 from models.segnet import segnet
-from models.enet import e_net
+from models.e_net import e_net
 from models.erfnet import erfnet
 import os
 
@@ -30,7 +30,7 @@ class Configuration:
         assert os.path.isdir(self.dataset_path), "Invalid Dataset path: {}".format(self.dataset_path)
 
         self.epochs = data.get("epochs", 0)
-        self.learning_rate = data.get("learning_rate", 1e-4)
+        self.learning_rate = float(data.get("learning_rate", 1e-4))
         self.batch_sizes = data.get("batch_sizes", {"train": 1, "validation": 1, "test": 1})
         self.image_size = data.get("image_size", [512, 512])
         self.n_classes = data.get("n_classes", 7)

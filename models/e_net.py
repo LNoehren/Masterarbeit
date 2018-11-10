@@ -41,6 +41,6 @@ def e_net(image, *, n_classes=7):
         bottleneck5_0 = bottleneck(bottleneck4_2, filters=16, dropout_rate=0.1, upsampling_indices=index1, name="bottleneck5_0")
         bottleneck5_1 = bottleneck(bottleneck5_0, filters=16, dropout_rate=0.1, name="bottleneck5_1")
 
-        classes = tf.layers.Conv2DTranspose(filters=n_classes, kernel_size=(1, 1), strides=(2, 2), padding="same", activation="softmax", name="classes")(bottleneck5_1)
+        classes = tf.layers.Conv2DTranspose(filters=n_classes, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="softmax", name="classes")(bottleneck5_1)
 
     return classes
