@@ -111,25 +111,24 @@ def compute_mean_class_iou(iou_list):
     return result_list
 
 
-def weighted_categorical_cross_entropy(y_true, y_pred, use_weights=True):
+def weighted_categorical_cross_entropy(y_true, y_pred, class_weights=None):
     """
     categorical cross entropy with class weights computed the same way as in the vocalfolds paper.
     Warning: The weights are only correct for the vocalfolds Dataset!
 
     :param y_true: not one hot encoded gt
     :param y_pred: output of network
+    :param use_weights: Class weights to put more focus on smaller classes.
     :return:
     """
     # correct_pred = tf.reduce_max(tf.where(y_true == 1, y_pred, tf.zeros(tf.shape(y_pred))))
     # result = -tf.log(tf.exp(correct_pred) / tf.reduce_sum(tf.exp(y_pred), axis=-1))
     result = tf.keras.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred)
-    if use_weights:
+    if class_weights:
         # class_occurrences = tf.constant(
         #     [1799515, 33842753, 30357751, 8538275, 336769, 2361923, 6363305], dtype=tf.float32)
         # class_weights = tf.reduce_sum(class_occurrences) / (7 * class_occurences)
-        # pre-computed weights for better performance:
-        class_weights = tf.constant(
-            [6.63673196, 0.35289383, 0.39340525, 1.39874843, 35.46317718, 5.05643017, 1.87683896])
+        # pre-compute weights for better performance:
         result *= tf.reduce_max(class_weights * y_true, axis=-1)
 
     return result
@@ -167,3 +166,7 @@ def write_conf_mat(conf_mat, path):
         writer.write("\nClass IOU's:\n")
         for class_id in range(len(classes)):
             writer.write(classes[class_id] + ": " + str(ious[class_id]) + "\n")
+
+
+def normalize_image(image, mean, std):
+    return (image - mean) / std

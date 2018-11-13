@@ -5,7 +5,7 @@ import numpy as np
 
 
 class Model:
-    def __init__(self, width, height, n_classes, model_structure, use_class_weights=True):
+    def __init__(self, width, height, n_classes, model_structure, class_weights=None):
         self.__name__ = model_structure.__name__
         self.image = tf.placeholder(dtype=tf.float32, shape=(None, width, height, 3), name="image")
         self.y_true = tf.placeholder(dtype=tf.int32, shape=(None, width, height), name="gt")
@@ -14,7 +14,7 @@ class Model:
         self.y_pred = model_structure(self.image, n_classes=n_classes)
 
         self.iou, self.class_ious = mean_iou(y_true_oh, self.y_pred)
-        self.loss = weighted_categorical_cross_entropy(y_true_oh, self.y_pred, use_weights=use_class_weights)
+        self.loss = weighted_categorical_cross_entropy(y_true_oh, self.y_pred, class_weights=class_weights)
 
         self.lr = tf.placeholder(dtype=tf.float32, shape=(), name="learning_rate")
         optimizer = tf.train.AdamOptimizer(learning_rate=self.lr, name='optimizer')

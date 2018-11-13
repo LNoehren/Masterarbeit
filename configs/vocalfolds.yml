@@ -1,5 +1,5 @@
-model_structure: erfnet
-dataset_path: /home/lennard/Datasets/vocalfolds-master/img/
+model_structure: e_net
+dataset_path: /home/lennard/Datasets/vocalfolds_augmented/
 epochs: 200
 learning_rate: 1e-4
 batch_sizes:
@@ -10,5 +10,8 @@ image_size:
   - 512
   - 512
 n_classes: 7
-class_weights: True
-use_augs: True
+class_weights: [6.63673196, 0.35289383, 0.39340525, 1.39874843, 35.46317718, 5.05643017, 1.87683896]
+use_augs: False
+normalization_params:
+  - [72.23536678, 92.29408995, 160.99123017]
+  - [43.67935975, 46.16065498, 59.28851215]

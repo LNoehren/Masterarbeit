@@ -14,7 +14,7 @@ class Configuration:
             This needs to be specified to select the model that should be used. Currently supported models are
             u_net, segnet, e_net and erfnet
         - dataset_path: default: None
-            The path to the img directory of the dataset. The directory structure of the dataset has to be like this:
+            The path to the root directory of the dataset. The directory structure of the dataset has to be like this:
                 img/
                     train/
                         train-data
@@ -50,13 +50,15 @@ class Configuration:
             The number of processes that should be used for Pre-Processing (reading images, augmentations)
         - debug: default: False
             Activates the Tensorflow debugger.
+        - normalization_params: default [None, None]
+            Mean and std of the dataset for image normalization. If this is None no normalization will be performed.
     """
     def __init__(self, config_path):
         with open(config_path, "r") as config:
             data = yaml.load(config)
 
         supported_fields = ["model_structure", "dataset_path", "epochs", "learning_rate", "batch_sizes", "image_size",
-                            "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug"]
+                            "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug", "normalization_params"]
         for key in data.keys():
             if key not in supported_fields:
                 warnings.warn("Unknown Field in config file: {}: {}".format(key, data[key]), SyntaxWarning)
@@ -85,8 +87,10 @@ class Configuration:
         self.load_path = data.get("load_path", None)
         self.use_augs = data.get("use_augs", False)
         self.debug = data.get("debug", False)
-        self.use_class_weights = data.get("class_weights", True)
+        self.class_weights = data.get("class_weights", None)
         self.n_processes = data.get("n_processes", 8)
+        self.mean, self.std = data.get("normalization_params", [None, None])
+        self.write_test_results = data.get("write_test_results", True)
 
     def save_config(self, save_path):
         class_dict = self.__dict__

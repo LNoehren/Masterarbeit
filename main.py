@@ -13,12 +13,13 @@ from configuration import Configuration
 
 
 def main(config):
-    model = Model(config.image_size[0], config.image_size[1], config.n_classes, config.model_structure, config.use_class_weights)
+    model = Model(config.image_size[0], config.image_size[1], config.n_classes,
+                  config.model_structure, config.class_weights)
     saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
 
-    train_paths = get_file_list(config.dataset_path + "train")
-    val_paths = get_file_list(config.dataset_path + "val")
-    test_paths = get_file_list(config.dataset_path + "test")
+    train_paths = get_file_list(config.dataset_path + "img/train")
+    val_paths = get_file_list(config.dataset_path + "img/val")
+    test_paths = get_file_list(config.dataset_path + "img/test")
 
     train_steps = int(len(train_paths) / config.batch_sizes["train"])
     val_steps = int(len(val_paths) / config.batch_sizes["validation"])
@@ -57,9 +58,10 @@ def main(config):
 
             print("Epoch {}/{}:".format(epoch+1, config.epochs))
             print("Starting training")
-            train_data_gen = DataGenerator(train_paths, config.batch_sizes["train"], config.n_processes, use_augs=config.use_augs)
+            train_data_gen = DataGenerator(train_paths, config.batch_sizes["train"], config.n_processes,
+                                           config.mean, config.std, use_augs=config.use_augs)
 
-            for step in tqdm(range(train_steps)):
+            for _ in tqdm(range(train_steps)):
                 image_batch, gt_batch = train_data_gen.__next__()
 
                 train_loss, train_iou = model.training(sess, image_batch, gt_batch, config.learning_rate)
@@ -69,9 +71,10 @@ def main(config):
             train_data_gen.stop()
 
             print("Starting validation")
-            val_data_gen = DataGenerator(val_paths, config.batch_sizes["validation"], config.n_processes)
+            val_data_gen = DataGenerator(val_paths, config.batch_sizes["validation"], config.n_processes,
+                                         config.mean, config.std)
 
-            for step in tqdm(range(val_steps)):
+            for _ in tqdm(range(val_steps)):
                 image_batch, gt_batch = val_data_gen.__next__()
 
                 _, val_loss, val_iou, class_ious = model.validation(sess, image_batch, gt_batch)
@@ -91,7 +94,8 @@ def main(config):
             print("class ious: {}".format(mean_class_iou))
 
             with open(log_file, "a") as log:
-                log.write("{},{},{},{},{}\n".format(epoch+1, mean_train_loss, mean_train_iou, mean_val_loss, mean_val_iou))
+                log.write("{},{},{},{},{}\n".format(epoch+1, mean_train_loss, mean_train_iou,
+                                                    mean_val_loss, mean_val_iou))
 
             if mean_val_iou > best_val_iou:
                 save_path = saver.save(sess, result_dir + "saved_model/model.ckpt")
@@ -113,7 +117,8 @@ def main(config):
         test_iou_list = []
         class_iou_list = []
         print("Starting test")
-        test_data_gen = DataGenerator(test_paths, config.batch_sizes["test"], config.n_processes)
+        test_data_gen = DataGenerator(test_paths, config.batch_sizes["test"], config.n_processes,
+                                      config.mean, config.std)
 
         for step in tqdm(range(test_steps)):
             image_batch, gt_batch = test_data_gen.__next__()
@@ -124,9 +129,10 @@ def main(config):
             class_iou_list.append(class_ious)
 
             # result images are only implemented for vocalfolds dataset
-            if config.use_class_weights:
+            if config.write_test_results:
                 for b in range(config.batch_sizes["test"]):
-                    result_path = result_dir + "test_images/" + test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
+                    result_path = result_dir + "test_images/" + \
+                                  test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
                     write_overlayed_result(result[b, :, :, :], image_batch[b, :, :, :], result_path)
 
         test_data_gen.stop()
@@ -151,4 +157,3 @@ if __name__ == '__main__':
                              "for format information.")
     args = parser.parse_args()
     main(Configuration(args.config_path))
-

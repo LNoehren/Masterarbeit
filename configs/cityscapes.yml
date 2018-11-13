@@ -1,7 +1,7 @@
-model_structure: erfnet
-dataset_path: /home/lennard/Datasets/Cityscapes/img/
-epochs: 1
-learning_rate: 1e-4
+model_structure: u_net
+dataset_path: /home/lennard/Datasets/Cityscapes/
+epochs: 1000
+learning_rate: 1e-3
 batch_sizes:
   train: 1
   validation: 1
@@ -10,4 +10,5 @@ image_size:
   - 512
   - 1024
 n_classes: 19
-class_weights: False
+write_test_results: False
+load_path: results/u_net_18-11-11_220228/saved_model/model.ckpt

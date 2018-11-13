@@ -1,17 +1,20 @@
 from multiprocessing import Pool, Manager
 from threading import Thread
-from utils import get_image_gt
+from utils import get_image_gt, normalize_image
 import numpy as np
 import time
 from augmentations import flip_h, random_rotation, perform_augmentations
 
 
-def worker_task(path, queue, use_augs):
+def worker_task(path, queue, use_augs, mean, std):
     # don't continue if queue is already filled
     while queue.qsize() > 10:
         time.sleep(0.1)
 
     image, gt = get_image_gt(path)
+
+    if mean and std:
+        image = normalize_image(image, mean, std)
 
     if use_augs:
         augs = [flip_h, random_rotation]
@@ -22,7 +25,7 @@ def worker_task(path, queue, use_augs):
 
 
 class DataGenerator:
-    def __init__(self, path_list, batch_size, n_processes, use_augs=False):
+    def __init__(self, path_list, batch_size, n_processes, mean, std, use_augs=False):
         self.queue = Manager().Queue()
         self.n_processes = n_processes
         self.batch_size = batch_size
@@ -31,6 +34,8 @@ class DataGenerator:
         self.use_augs = use_augs
         self.master_thread = Thread(target=self.generation_loop, args=[self.queue])
         self.master_thread.start()
+        self.mean = mean
+        self.std = std
 
     def stop(self):
         self.master_thread.join()
@@ -52,7 +57,7 @@ class DataGenerator:
         with Pool(processes=self.n_processes) as pool:
             res = []
             for path in self.path_list:
-                res.append(pool.apply_async(worker_task, args=(path, queue, self.use_augs)))
+                res.append(pool.apply_async(worker_task, args=(path, queue, self.use_augs, self.mean, self.std)))
 
             for r in res:
                 r.get()

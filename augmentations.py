@@ -13,7 +13,7 @@ def random_rotation(image):
     rows, cols = image.shape[:2]
 
     mat = cv2.getRotationMatrix2D((cols / 2, rows / 2), degree, 1)
-    result = cv2.warpAffine(image, mat, (cols, rows))
+    result = cv2.warpAffine(image, mat, (cols, rows), borderMode=cv2.BORDER_REFLECT)
 
     return result
 
