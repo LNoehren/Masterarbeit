@@ -163,3 +163,8 @@ def write_conf_mat(conf_mat, path):
 
 def normalize_image(image, mean, std):
     return (image - mean) / std
+
+
+def class_remapping(gt, class_mapping):
+    new_gt = np.take(class_mapping, gt)
+    return new_gt

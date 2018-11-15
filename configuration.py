@@ -55,6 +55,10 @@ class Configuration:
         - class_labels: default None
             List of classes in the dataset. Each element should be a list where the first element is the color
             that should be used for the class and the second element is the name of the class.
+        - class_mapping: default None
+            List that is used to map one class to another. For example cityscapes has in total 34 classes, but usually
+            only 19 are used for training, so the mapping should be a list with 34 elements that map each class to one
+            of the 19 main classes or -1 to ignore it.
 
     Check the configs directory for example config files for the vocalfolds and cityscapes datasets.
     """
@@ -64,7 +68,7 @@ class Configuration:
 
         supported_fields = ["model_structure", "dataset_path", "epochs", "learning_rate", "batch_sizes", "image_size",
                             "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug",
-                            "normalization_params", "class_labels"]
+                            "normalization_params", "class_labels", "class_mapping"]
         for key in data.keys():
             if key not in supported_fields:
                 warnings.warn("Unknown Field in config file: {}: {}".format(key, data[key]), SyntaxWarning)
@@ -97,6 +101,7 @@ class Configuration:
         self.debug = data.get("debug", False)
         self.mean, self.std = data.get("normalization_params", [None, None])
         self.class_labels = data.get("class_labels", None)
+        self.class_mapping = data.get("class_mapping", None)
 
     def save_config(self, save_path):
         class_dict = self.__dict__

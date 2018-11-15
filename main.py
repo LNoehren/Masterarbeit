@@ -66,7 +66,8 @@ def main(config):
             print("Starting training")
             # data generator for training
             train_data_gen = DataGenerator(train_paths, config.batch_sizes["train"], config.n_processes,
-                                           config.mean, config.std, use_augs=config.use_augs)
+                                           config.mean, config.std, use_augs=config.use_augs,
+                                           class_mapping=config.class_mapping)
 
             # train loop
             for _ in tqdm(range(train_steps)):
@@ -81,7 +82,7 @@ def main(config):
             print("Starting validation")
             # data generator for validation
             val_data_gen = DataGenerator(val_paths, config.batch_sizes["validation"], config.n_processes,
-                                         config.mean, config.std)
+                                         config.mean, config.std, class_mapping=config.class_mapping)
 
             # validation loop
             for _ in tqdm(range(val_steps)):
