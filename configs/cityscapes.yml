@@ -11,4 +11,6 @@ image_size:
   - 1024
 n_classes: 19
 write_test_results: False
-load_path: results/u_net_18-11-11_220228/saved_model/model.ckpt
+normalization_params:
+  - [72.45996064, 82.30920661, 71.8585933]
+  - [46.99697658, 47.7633243, 46.96281819]
