@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import os
-from sklearn.preprocessing import normalize
 
 
 def get_file_list(root_path):
@@ -43,21 +42,15 @@ def write_image(img, path):
     cv2.imwrite(path, img)
 
 
-def write_overlayed_result(net_out, img, path):
-    result = transform_net_out(net_out)
-    overlayed = 0.5 * result + 0.5 * img
-    overlayed = np.reshape(overlayed, (512, 512, 3))
-    write_image(overlayed, path)
+def write_overlaid_result(net_out, img, path, class_labels):
+    result = transform_net_out(net_out, class_labels)
+    overlaid = 0.5 * result + 0.5 * img
+    overlaid = np.reshape(overlaid, (512, 512, 3))
+    write_image(overlaid, path)
 
 
-def transform_net_out(net_out):
-    class_mapping = [[105, 105, 105],   # 0: void, gray
-                     [255, 0, 0],       # 1: vocal folds, red
-                     [0, 0, 255],       # 2: other tissue, blue
-                     [0, 255, 0],       # 3: glottal space, green
-                     [128, 0, 128],     # 4: pathology, purple
-                     [255, 69, 0],      # 5: surgical tool, orange
-                     [255, 255, 0]]     # 6: intubation, yellow
+def transform_net_out(net_out, class_labels):
+    class_mapping = class_labels[:][0]
 
     net_out = np.argmax(net_out, axis=-1)
     result = np.take(class_mapping, net_out, axis=0)
@@ -118,7 +111,7 @@ def weighted_categorical_cross_entropy(y_true, y_pred, class_weights=None):
 
     :param y_true: not one hot encoded gt
     :param y_pred: output of network
-    :param use_weights: Class weights to put more focus on smaller classes.
+    :param class_weights: Class weights to put more focus on smaller classes.
     :return:
     """
     # correct_pred = tf.reduce_max(tf.where(y_true == 1, y_pred, tf.zeros(tf.shape(y_pred))))

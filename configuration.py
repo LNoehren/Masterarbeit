@@ -52,13 +52,19 @@ class Configuration:
             Activates the Tensorflow debugger.
         - normalization_params: default [None, None]
             Mean and std of the dataset for image normalization. If this is None no normalization will be performed.
+        - class_labels: default None
+            List of classes in the dataset. Each element should be a list where the first element is the color
+            that should be used for the class and the second element is the name of the class.
+
+    Check the configs directory for example config files for the vocalfolds and cityscapes datasets.
     """
     def __init__(self, config_path):
         with open(config_path, "r") as config:
             data = yaml.load(config)
 
         supported_fields = ["model_structure", "dataset_path", "epochs", "learning_rate", "batch_sizes", "image_size",
-                            "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug", "normalization_params"]
+                            "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug",
+                            "normalization_params", "class_labels"]
         for key in data.keys():
             if key not in supported_fields:
                 warnings.warn("Unknown Field in config file: {}: {}".format(key, data[key]), SyntaxWarning)
@@ -86,11 +92,11 @@ class Configuration:
         self.n_classes = data.get("n_classes", 7)
         self.load_path = data.get("load_path", None)
         self.use_augs = data.get("use_augs", False)
-        self.debug = data.get("debug", False)
         self.class_weights = data.get("class_weights", None)
         self.n_processes = data.get("n_processes", 8)
+        self.debug = data.get("debug", False)
         self.mean, self.std = data.get("normalization_params", [None, None])
-        self.write_test_results = data.get("write_test_results", True)
+        self.class_labels = data.get("class_labels", None)
 
     def save_config(self, save_path):
         class_dict = self.__dict__
