@@ -171,11 +171,17 @@ def main(config):
             for class_iou in mean_class_iou:
                 log.write(",{}".format(class_iou))
 
+    tf.reset_default_graph()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Perform a semantic Segmentation Training and Evaluation')
-    parser.add_argument("config_path", type=str,
+    parser.add_argument("config_path", type=str, nargs='+',
                         help="The path to the config file for the Experiment. Check the Configuration class "
                              "for format information.")
     args = parser.parse_args()
-    main(Configuration(args.config_path))
+    if isinstance(args.config_path, list):
+        for config in args.config_path:
+            main(Configuration(config))
+    else:
+        main(Configuration(args.config_path))
