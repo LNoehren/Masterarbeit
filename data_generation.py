@@ -28,7 +28,7 @@ def worker_task(path, queue, use_augs, mean, std, class_mapping):
 
 
 class DataGenerator:
-    def __init__(self, path_list, batch_size, n_processes, mean, std, use_augs=False, class_mapping=None):
+    def __init__(self, path_list, batch_size, n_processes, normalization_params, use_augs=False, class_mapping=None):
         self.queue = Manager().Queue()
         self.n_processes = n_processes
         self.batch_size = batch_size
@@ -37,8 +37,7 @@ class DataGenerator:
         self.use_augs = use_augs
         self.master_thread = Thread(target=self.generation_loop, args=[self.queue])
         self.master_thread.start()
-        self.mean = mean
-        self.std = std
+        self.mean, self.std = normalization_params
         self.class_mapping = class_mapping
 
     def stop(self):

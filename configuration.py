@@ -99,13 +99,14 @@ class Configuration:
         self.class_weights = data.get("class_weights", None)
         self.n_processes = data.get("n_processes", 8)
         self.debug = data.get("debug", False)
-        self.mean, self.std = data.get("normalization_params", [None, None])
+        self.normalization_params = data.get("normalization_params", [None, None])
         self.class_labels = data.get("class_labels", None)
         self.class_mapping = data.get("class_mapping", None)
 
     def save_config(self, save_path):
         class_dict = self.__dict__
-        class_dict["model_structure"] = class_dict["model_structure"].__name__
+        # change formatting of model structure name
+        class_dict["model_structure"] = self.model_structure.__name__
 
         with open(save_path, 'w') as outfile:
             yaml.dump(class_dict, outfile, default_flow_style=False)

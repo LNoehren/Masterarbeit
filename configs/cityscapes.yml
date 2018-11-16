@@ -1,4 +1,4 @@
-model_structure: u_net
+model_structure: erfnet
 dataset_path: /home/lennard/Datasets/Cityscapes/
 epochs: 1000
 learning_rate: 1e-3

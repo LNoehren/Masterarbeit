@@ -42,15 +42,15 @@ def write_image(img, path):
     cv2.imwrite(path, img)
 
 
-def write_overlaid_result(net_out, img, path, class_labels):
+def write_overlaid_result(net_out, img, path, class_labels, image_size):
     result = transform_net_out(net_out, class_labels)
     overlaid = 0.5 * result + 0.5 * img
-    overlaid = np.reshape(overlaid, (512, 512, 3))
+    overlaid = np.reshape(overlaid, image_size + (3,))
     write_image(overlaid, path)
 
 
 def transform_net_out(net_out, class_labels):
-    class_mapping = class_labels[:][0]
+    class_mapping = [class_info[0] for class_info in class_labels]
 
     net_out = np.argmax(net_out, axis=-1)
     result = np.take(class_mapping, net_out, axis=0)

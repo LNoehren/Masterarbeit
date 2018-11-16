@@ -49,9 +49,10 @@ def main(config):
 
         # create log file
         with open(log_file, "w") as log:
-            log.write("Epoch,Train_loss,Train_iou,Val_loss,Val_iou\n")
+            log.write("Epoch,Train_loss,Train_iou,Val_loss,Val_iou")
             for class_info in config.class_labels:
                 log.write(",{}".format(class_info[1]))
+            log.write("\n")
 
         # begin training
         for epoch in range(config.epochs):
@@ -66,7 +67,7 @@ def main(config):
             print("Starting training")
             # data generator for training
             train_data_gen = DataGenerator(train_paths, config.batch_sizes["train"], config.n_processes,
-                                           config.mean, config.std, use_augs=config.use_augs,
+                                           config.normalization_params, use_augs=config.use_augs,
                                            class_mapping=config.class_mapping)
 
             # train loop
@@ -82,7 +83,7 @@ def main(config):
             print("Starting validation")
             # data generator for validation
             val_data_gen = DataGenerator(val_paths, config.batch_sizes["validation"], config.n_processes,
-                                         config.mean, config.std, class_mapping=config.class_mapping)
+                                         config.normalization_params, class_mapping=config.class_mapping)
 
             # validation loop
             for _ in tqdm(range(val_steps)):
@@ -107,10 +108,11 @@ def main(config):
 
             # write to log
             with open(log_file, "a") as log:
-                log.write("{},{},{},{},{}\n".format(epoch+1, mean_train_loss, mean_train_iou,
+                log.write("{},{},{},{},{}".format(epoch+1, mean_train_loss, mean_train_iou,
                                                     mean_val_loss, mean_val_iou))
                 for class_iou in mean_class_iou:
                     log.write(",{}".format(class_iou))
+                log.write("\n")
 
             if mean_val_iou > best_val_iou:
                 # save model in case of improvement
@@ -136,7 +138,7 @@ def main(config):
         print("Starting test")
         # data generator for tests
         test_data_gen = DataGenerator(test_paths, config.batch_sizes["test"], config.n_processes,
-                                      config.mean, config.std)
+                                      config.normalization_params)
 
         # test loop
         for step in tqdm(range(test_steps)):
@@ -151,7 +153,8 @@ def main(config):
             for b in range(config.batch_sizes["test"]):
                 result_path = result_dir + "test_images/" + \
                               test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
-                write_overlaid_result(result[b, :, :, :], image_batch[b, :, :, :], result_path, config.class_labels)
+                write_overlaid_result(result[b, :, :, :], image_batch[b, :, :, :], result_path,
+                                      config.class_labels, tuple(config.image_size))
 
         test_data_gen.stop()
 
