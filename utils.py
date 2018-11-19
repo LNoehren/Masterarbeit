@@ -66,28 +66,30 @@ def one_hot_encoding(data, n_classes):
 
 
 def iou(y_true, y_pred):
-    tp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(y_pred, 1), tf.equal(y_true, 1)), tf.float32), name="iou_tp")
-    fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(y_pred, 1), tf.equal(y_true, 0)), tf.float32), name="iou_fp")
-    fn = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(y_pred, 0), tf.equal(y_true, 1)), tf.float32), name="iou_fn")
+    with tf.variable_scope('class_Iou'):
+        tp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(y_pred, 1), tf.equal(y_true, 1)), tf.float32), name="iou_tp")
+        fp = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(y_pred, 1), tf.equal(y_true, 0)), tf.float32), name="iou_fp")
+        fn = tf.reduce_sum(tf.cast(tf.logical_and(tf.equal(y_pred, 0), tf.equal(y_true, 1)), tf.float32), name="iou_fn")
 
-    div = tp + fp + fn
-    return tf.cond(tf.equal(div, 0), lambda: -1.0, lambda: tp / div)
+        div = tp + fp + fn
+        return tf.cond(tf.equal(div, 0), lambda: -1.0, lambda: tp / div)
 
 
 def mean_iou(y_true, y_pred):
-    n_classes = y_pred.get_shape().as_list()[-1]
-    y_pred = tf.one_hot(tf.argmax(y_pred, -1), n_classes)
-    result = 0
-    class_count = 0
-    class_ious = []
+    with tf.variable_scope('mean_IoU'):
+        n_classes = y_pred.get_shape().as_list()[-1]
+        y_pred = tf.one_hot(tf.argmax(y_pred, -1), n_classes)
+        result = 0
+        class_count = 0
+        class_ious = []
 
-    for i in range(n_classes):
-        class_iou = iou(y_true[:, :, :, i], y_pred[:, :, :, i])
-        class_count += tf.cond(tf.greater(class_iou, -1), lambda: 1, lambda: 0)
-        result += tf.cond(tf.greater(class_iou, -1), lambda: class_iou, lambda: 0.0)
-        class_ious.append(class_iou)
+        for i in range(n_classes):
+            class_iou = iou(y_true[:, :, :, i], y_pred[:, :, :, i])
+            class_count += tf.cond(tf.greater(class_iou, -1), lambda: 1, lambda: 0)
+            result += tf.cond(tf.greater(class_iou, -1), lambda: class_iou, lambda: 0.0)
+            class_ious.append(class_iou)
 
-    return tf.divide(result, tf.cast(class_count, tf.float32), name="mean_iou"), tf.stack(class_ious)
+        return tf.divide(result, tf.cast(class_count, tf.float32), name="mean_iou"), tf.stack(class_ious)
 
 
 def compute_mean_class_iou(iou_list):
@@ -114,17 +116,12 @@ def weighted_categorical_cross_entropy(y_true, y_pred, class_weights=None):
     :param class_weights: Class weights to put more focus on smaller classes.
     :return:
     """
-    # correct_pred = tf.reduce_max(tf.where(y_true == 1, y_pred, tf.zeros(tf.shape(y_pred))))
-    # result = -tf.log(tf.exp(correct_pred) / tf.reduce_sum(tf.exp(y_pred), axis=-1))
-    result = tf.keras.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred)
-    if class_weights:
-        # class_occurrences = tf.constant(
-        #     [1799515, 33842753, 30357751, 8538275, 336769, 2361923, 6363305], dtype=tf.float32)
-        # class_weights = tf.reduce_sum(class_occurrences) / (7 * class_occurences)
-        # pre-compute weights for better performance:
-        result *= tf.reduce_max(class_weights * y_true, axis=-1)
+    with tf.variable_scope('weighted_categorical_cross_entropy'):
+        result = tf.keras.losses.categorical_crossentropy(y_true=y_true, y_pred=y_pred)
+        if class_weights:
+            result *= tf.reduce_max(class_weights * y_true, axis=-1)
 
-    return result
+        return result
 
 
 def parametric_relu(x, name):

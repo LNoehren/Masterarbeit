@@ -39,6 +39,11 @@ def main(config):
     with tf.Session() as sess:
         if config.debug:
             sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+
+        # tensorboard
+        train_writer = tf.summary.FileWriter(result_dir + '/tensorboard/train', sess.graph)
+        val_writer = tf.summary.FileWriter(result_dir + '/tensorboard/val')
+
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
 
@@ -71,12 +76,16 @@ def main(config):
                                            class_mapping=config.class_mapping)
 
             # train loop
-            for _ in tqdm(range(train_steps)):
+            for step in tqdm(range(train_steps)):
                 image_batch, gt_batch = train_data_gen.__next__()
 
-                train_loss, train_iou = model.training(sess, image_batch, gt_batch, config.learning_rate)
+                do_summary = step % 100
+                train_loss, train_iou, summary = model.training(sess, image_batch, gt_batch, config.learning_rate, do_summary)
                 train_loss_list.append(np.mean(train_loss))
                 train_iou_list.append(train_iou)
+
+                if do_summary:
+                    train_writer.add_summary(summary, epoch * train_steps + step)
 
             train_data_gen.stop()
 
@@ -86,13 +95,17 @@ def main(config):
                                          config.normalization_params, class_mapping=config.class_mapping)
 
             # validation loop
-            for _ in tqdm(range(val_steps)):
+            for step in tqdm(range(val_steps)):
                 image_batch, gt_batch = val_data_gen.__next__()
 
-                _, val_loss, val_iou, class_ious = model.validation(sess, image_batch, gt_batch)
+                do_summary = step == val_steps-1
+                _, val_loss, val_iou, class_ious, summary = model.validation(sess, image_batch, gt_batch, do_summary)
                 val_loss_list.append(np.mean(val_loss))
                 val_iou_list.append(val_iou)
                 class_iou_list.append(class_ious)
+
+                if do_summary:
+                    val_writer.add_summary(summary, epoch)
 
             val_data_gen.stop()
 
@@ -144,7 +157,7 @@ def main(config):
         for step in tqdm(range(test_steps)):
             image_batch, gt_batch = test_data_gen.__next__()
 
-            result, test_loss, test_iou, class_ious = model.validation(sess, image_batch, gt_batch)
+            result, test_loss, test_iou, class_ious, _ = model.validation(sess, image_batch, gt_batch)
             test_loss_list.append(np.mean(test_loss))
             test_iou_list.append(test_iou)
             class_iou_list.append(class_ious)

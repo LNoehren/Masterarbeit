@@ -1,6 +1,6 @@
 model_structure: erfnet
-dataset_path: /home/lennard/Datasets/vocalfolds_augmented/
-epochs: 0
+dataset_path: /home/lennard/Datasets/vocalfolds-master/
+epochs: 10
 learning_rate: 1e-4
 batch_sizes:
   train: 1
@@ -23,4 +23,3 @@ class_labels:
   - [[128,  0,128], "pathology"]
   - [[255, 69,  0], "surgical tool"]
   - [[255,255,  0], "intubation"]
-load_path: results/best_results/erfnet_augs/saved_model/model.ckpt
