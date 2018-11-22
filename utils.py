@@ -81,15 +81,16 @@ def mean_iou(y_true, y_pred):
         y_pred = tf.one_hot(tf.argmax(y_pred, -1), n_classes)
         result = 0
         class_count = 0
-        class_ious = []
+        class_iou_list = []
 
         for i in range(n_classes):
             class_iou = iou(y_true[:, :, :, i], y_pred[:, :, :, i])
             class_count += tf.cond(tf.greater(class_iou, -1), lambda: 1, lambda: 0)
             result += tf.cond(tf.greater(class_iou, -1), lambda: class_iou, lambda: 0.0)
-            class_ious.append(class_iou)
+            class_iou_list.append(class_iou)
 
-        return tf.divide(result, tf.cast(class_count, tf.float32), name="mean_iou"), tf.stack(class_ious)
+        class_iou_list = tf.stack(class_iou_list)
+        return tf.divide(result, tf.cast(class_count, tf.float32), name="mean_iou"), class_iou_list
 
 
 def compute_mean_class_iou(iou_list):
@@ -160,6 +161,10 @@ def write_conf_mat(conf_mat, path):
 
 def normalize_image(image, mean, std):
     return (image - mean) / std
+
+
+def de_normalize_image(image, mean, std):
+    return image * std + mean
 
 
 def class_remapping(gt, class_mapping):

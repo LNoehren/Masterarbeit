@@ -1,5 +1,5 @@
 import tensorflow as tf
-from utils import get_file_list, write_overlaid_result, compute_mean_class_iou
+from utils import get_file_list, write_overlaid_result, compute_mean_class_iou, de_normalize_image
 import numpy as np
 from random import shuffle
 from tqdm import tqdm
@@ -80,7 +80,8 @@ def main(config):
                 image_batch, gt_batch = train_data_gen.__next__()
 
                 do_summary = step % 100
-                train_loss, train_iou, summary = model.training(sess, image_batch, gt_batch, config.learning_rate, do_summary)
+                train_loss, train_iou, summary = model.training(sess, image_batch, gt_batch,
+                                                                config.learning_rate, do_summary)
                 train_loss_list.append(np.mean(train_loss))
                 train_iou_list.append(train_iou)
 
@@ -122,7 +123,7 @@ def main(config):
             # write to log
             with open(log_file, "a") as log:
                 log.write("{},{},{},{},{}".format(epoch+1, mean_train_loss, mean_train_iou,
-                                                    mean_val_loss, mean_val_iou))
+                                                  mean_val_loss, mean_val_iou))
                 for class_iou in mean_class_iou:
                     log.write(",{}".format(class_iou))
                 log.write("\n")
@@ -151,7 +152,7 @@ def main(config):
         print("Starting test")
         # data generator for tests
         test_data_gen = DataGenerator(test_paths, config.batch_sizes["test"], config.n_processes,
-                                      config.normalization_params)
+                                      config.normalization_params, class_mapping=config.class_mapping)
 
         # test loop
         for step in tqdm(range(test_steps)):
@@ -166,7 +167,9 @@ def main(config):
             for b in range(config.batch_sizes["test"]):
                 result_path = result_dir + "test_images/" + \
                               test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
-                write_overlaid_result(result[b, :, :, :], image_batch[b, :, :, :], result_path,
+                img = de_normalize_image(image_batch[b, :, :, :],
+                                         config.normalization_params[0], config.normalization_params[1])
+                write_overlaid_result(result[b, :, :, :], img, result_path,
                                       config.class_labels, tuple(config.image_size))
 
         test_data_gen.stop()
@@ -194,7 +197,7 @@ if __name__ == '__main__':
                              "for format information.")
     args = parser.parse_args()
     if isinstance(args.config_path, list):
-        for config in args.config_path:
-            main(Configuration(config))
+        for configuration in args.config_path:
+            main(Configuration(configuration))
     else:
         main(Configuration(args.config_path))
