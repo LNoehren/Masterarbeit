@@ -125,8 +125,9 @@ def weighted_categorical_cross_entropy(y_true, y_pred, class_weights=None):
         return result
 
 
-def parametric_relu(x, name):
-    alpha = tf.get_variable(name, x.get_shape()[-1], initializer=tf.constant_initializer(0.0), dtype=tf.float32)
+def parametric_relu(x, trainable=True, name="prelu"):
+    alpha = tf.get_variable(name, x.get_shape()[-1], initializer=tf.constant_initializer(0.0),
+                            dtype=tf.float32, trainable=trainable)
 
     return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)
 
@@ -164,7 +165,10 @@ def normalize_image(image, mean, std):
 
 
 def de_normalize_image(image, mean, std):
-    return image * std + mean
+    if mean and std:
+        return image * std + mean
+    else:
+        return image
 
 
 def class_remapping(gt, class_mapping):

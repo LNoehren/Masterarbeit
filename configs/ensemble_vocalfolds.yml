@@ -1,6 +1,8 @@
-model_structure: segnet
+model_structure:
+  - u_net
+  - segnet
 dataset_path: /home/lennard/Datasets/vocalfolds-master/
-epochs: 0
+epochs: 10
 learning_rate: 1e-4
 batch_sizes:
   train: 1
@@ -23,4 +25,6 @@ class_labels:
   - [[128,  0,128], "pathology"]
   - [[255, 69,  0], "surgical tool"]
   - [[255,255,  0], "intubation"]
-load_path: results/best_results/segnet/saved_model/model.ckpt
+load_path:
+  - results/best_results/u_net/saved_model/model.ckpt
+  - results/best_results/segnet/saved_model/model.ckpt

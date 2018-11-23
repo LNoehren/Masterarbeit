@@ -74,16 +74,10 @@ class Configuration:
                 warnings.warn("Unknown Field in config file: {}: {}".format(key, data[key]), SyntaxWarning)
 
         model_name = data.get("model_structure", "undefined")
-        if model_name == "u_net":
-            self.model_structure = u_net
-        elif model_name == "segnet":
-            self.model_structure = segnet
-        elif model_name == "e_net":
-            self.model_structure = e_net
-        elif model_name == "erfnet":
-            self.model_structure = erfnet
+        if isinstance(model_name, list):
+            self.model_structure = [check_model_structure(name) for name in model_name]
         else:
-            raise AttributeError("Unknown model structure: {}".format(model_name))
+            self.model_structure = check_model_structure(model_name)
 
         self.dataset_path = data.get("dataset_path", None)
         self.dataset_path = self.dataset_path + "/" if not self.dataset_path.endswith("/") else self.dataset_path
@@ -106,7 +100,21 @@ class Configuration:
     def save_config(self, save_path):
         class_dict = self.__dict__
         # change formatting of model structure name
-        class_dict["model_structure"] = self.model_structure.__name__
+        class_dict["model_structure"] = [model.__name__ for model in self.model_structure] \
+            if isinstance(self.model_structure, list) else self.model_structure.__name__
 
         with open(save_path, 'w') as outfile:
             yaml.dump(class_dict, outfile, default_flow_style=False)
+
+
+def check_model_structure(name):
+    if name == "u_net":
+        return u_net
+    elif name == "segnet":
+        return segnet
+    elif name == "e_net":
+        return e_net
+    elif name == "erfnet":
+        return erfnet
+    else:
+        raise AttributeError("Unknown model structure: {}".format(name))

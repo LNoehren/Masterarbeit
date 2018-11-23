@@ -5,7 +5,6 @@ from random import shuffle
 from tqdm import tqdm
 import os
 import datetime
-from models.model import Model
 import argparse
 from tensorflow.python import debug as tf_debug
 from data_generation import DataGenerator
@@ -14,9 +13,20 @@ from configuration import Configuration
 
 def main(config):
     # create Tensorflow model
+    if isinstance(config.model_structure, list):
+        from models.ensemble_model import EnsembleModel as Model
+    else:
+        from models.model import Model
+
     model = Model(config.image_size[0], config.image_size[1], config.n_classes,
                   config.model_structure, config.class_weights)
-    saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
+
+    if isinstance(config.model_structure, list):
+        # load all sub-models for ensemble models
+        saver = [tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=sub_model.__name__))
+                 for sub_model in config.model_structure]
+    else:
+        saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
 
     train_paths = get_file_list(config.dataset_path + "img/train")
     val_paths = get_file_list(config.dataset_path + "img/val")
@@ -49,8 +59,13 @@ def main(config):
 
         # load weights from previous training
         if config.load_path is not None:
-            saver.restore(sess, config.load_path)
-            print("Model restored.")
+            if isinstance(saver, list):
+                for i in range(len(saver)):
+                    saver[i].restore(sess, config.load_path[i])
+                    print("Model {} restored.".format(i+1))
+            else:
+                saver.restore(sess, config.load_path)
+                print("Model restored.")
 
         # create log file
         with open(log_file, "w") as log:
@@ -129,9 +144,10 @@ def main(config):
                 log.write("\n")
 
             if mean_val_iou > best_val_iou:
-                # save model in case of improvement
-                save_path = saver.save(sess, result_dir + "saved_model/model.ckpt")
-                print("Model saved in {}".format(save_path))
+                # save model in case of improvement only for non ensemble models
+                if not isinstance(saver, list):
+                    save_path = saver.save(sess, result_dir + "saved_model/{}.ckpt".format(model.__name__))
+                    print("Model saved in {}".format(save_path))
                 best_val_iou = mean_val_iou
                 no_improve_count = 0
             else:

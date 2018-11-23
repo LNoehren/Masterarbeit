@@ -1,7 +1,7 @@
-model_structure: u_net
+model_structure: erfnet
 dataset_path: /home/lennard/Datasets/Cityscapes/
-epochs: 1000
-learning_rate: 1e-3
+epochs: 100
+learning_rate: 1e-2
 batch_sizes:
   train: 1
   validation: 1
@@ -33,4 +33,5 @@ class_labels:
   - [[  0, 80,100], "train"]
   - [[  0,  0,230], "motorcycle"]
   - [[119, 11, 32], "bicycle"]
+  - [[  0,  0,  0], "void"]
 class_mapping: [-1, -1, -1, -1, -1, -1, -1, 0, 1, -1, -1, 2, 3, 4, -1, -1, -1, 5, -1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, -1, -1, 16, 17, 18]
