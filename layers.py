@@ -60,7 +60,8 @@ def bilinear_initializer(kernel_size, num_channels):
     return tf.constant_initializer(value=weights, dtype=tf.float32)
 
 
-def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indices=None, dilation=1, asymmetric=False, trainable=True, name="bottleneck"):
+def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indices=None, dilation=1, asymmetric=False,
+               trainable=True, name="bottleneck"):
     """
     bottleneck block for e-net. It can perform downsampling or upsampling and can use normal, dilated or asymmetric
     convolutions. Returns the output of the block and if downsampling was performed also the max_pooling indices.
@@ -71,7 +72,9 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
     :param downsampling: whether or not the block should perform downsampling
     :param upsampling_indices: Performs max_unpooling with these indices if they are not None
     :param dilation: dilation rate of the convolution
-    :param asymmetric: whether the central convolution should be symmetric (3x3) or two asymmetric convolutions (5x1, 1x5)
+    :param asymmetric: whether the central convolution should be symmetric (3x3) or two asymmetric
+                       convolutions (5x1, 1x5)
+    :param trainable: whether all variables should be trainable or fixed
     :param name: name of the block
     :return: output of the bottleneck block
     """
@@ -127,6 +130,7 @@ def e_net_initializer_block(image, filters, trainable=True, name="initializer"):
 
     :param image: input Tensor
     :param filters: total number of output filters of the block
+    :param trainable: whether all variables should be trainable or fixed
     :param name: name of the block
     :return: output tensor of the block
     """
@@ -146,6 +150,7 @@ def non_bt_1d(input, filters, dilation_rate=1, trainable=True, name="non_bt_1D")
     :param input: input Tensor
     :param filters: number of filters of the block
     :param dilation_rate: dilation rate for second pair of convolutions
+    :param trainable: whether all variables should be trainable or fixed
     :param name: name of the block
     :return: output tensor of the block
     """
@@ -166,6 +171,7 @@ def conv_bn(input, name, trainable=True, **kwargs):
 
     :param input: input tensor
     :param name: name of the block
+    :param trainable: whether all variables should be trainable or fixed
     :param kwargs: args for the convolution layer
     :return: output of the relu layer
     """
@@ -178,4 +184,12 @@ def conv_bn(input, name, trainable=True, **kwargs):
 
 
 def spatial_dropout(input, dropout_rate, name="dropout"):
+    """
+    spatial Dropout layer. Drops whole filters instead of single values
+
+    :param input: input tensor
+    :param dropout_rate: percentage of filters that should bedropped
+    :param name: name of the layer
+    :return: output of the dropout layer
+    """
     return tf.layers.Dropout(dropout_rate, noise_shape=[1, tf.shape(input)[1], tf.shape(input)[2], 1], name=name)(input)

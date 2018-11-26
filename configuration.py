@@ -98,6 +98,12 @@ class Configuration:
         self.class_mapping = data.get("class_mapping", None)
 
     def save_config(self, save_path):
+        """
+        saves the config in a yml file that can be used as a config for future trainings and to check which parameters
+        were used in this training.
+
+        :param save_path: write path
+        """
         class_dict = self.__dict__
         # change formatting of model structure name
         class_dict["model_structure"] = [model.__name__ for model in self.model_structure] \
@@ -108,6 +114,13 @@ class Configuration:
 
 
 def check_model_structure(name):
+    """
+    returns the correct model structure function for a given name ('u_net', 'segnet', 'e_net' or 'erfnet')
+
+    :param name: the name of the model strucuture
+    :return: model structure function
+    :raises AttributeError if an unknown name was given
+    """
     if name == "u_net":
         return u_net
     elif name == "segnet":

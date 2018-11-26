@@ -3,6 +3,15 @@ from layers import spatial_dropout
 
 
 def u_net(image, *, n_classes=7, trainable=True):
+    """
+    U-Net model structure.
+    https://arxiv.org/pdf/1505.04597.pdf
+
+    :param image: input tensor
+    :param n_classes: number of classes
+    :param trainable: whether the variables of the model should be trainable or fixed
+    :return: the output tensor of the model. After Softmax is applied
+    """
     with tf.variable_scope("u_net"):
 
         # encoder

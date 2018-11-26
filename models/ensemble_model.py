@@ -3,7 +3,21 @@ from utils import mean_iou, weighted_categorical_cross_entropy
 
 
 class EnsembleModel:
+    """
+    Pretty much the same as Model class, but takes a list of model structures that are then combined to an ensemble-
+    model. The variables of the sub-models are set to not trainable and the predictions are combined with a
+    weighted sum. The weights for the sum are trainable. Currently only works with batch size 1.
+    """
     def __init__(self, width, height, n_classes, model_structures, class_weights=None):
+        """
+        initializes the tensorflow variables
+
+        :param width: image width
+        :param height: image height
+        :param n_classes: number of classes
+        :param model_structure: function that returns a prediction given an input image
+        :param class_weights: class weights for the loss function
+        """
         self.__name__ = "-".join([model.__name__ for model in model_structures])
         self.image = tf.placeholder(dtype=tf.float32, shape=(None, width, height, 3), name="image")
         self.y_true = tf.placeholder(dtype=tf.int32, shape=(None, width, height), name="gt")
@@ -35,6 +49,16 @@ class EnsembleModel:
         self.merged = tf.summary.merge_all()
 
     def training(self, sess, in_image, gt, learning_rate, do_summary=False):
+        """
+        performs one train step
+
+        :param sess: tensorflow session
+        :param in_image: input image
+        :param gt: ground truth
+        :param learning_rate: learning rate for the optimizer
+        :param do_summary: whether or not to return a summary for tensorboard
+        :return: train loss, train IoU, summary if do_summary is true
+        """
         if do_summary:
             _, train_loss, train_iou, summary = sess.run(
                 (self.train, self.loss, self.iou, self.merged), feed_dict={self.image: in_image,
@@ -49,6 +73,16 @@ class EnsembleModel:
         return train_loss, train_iou, summary
 
     def validation(self, sess, in_image, gt, do_summary=False):
+        """
+        performs one validation step
+
+        :param sess: tensorflow session
+        :param in_image: input image
+        :param gt: ground truth
+        :param do_summary: whether or not to return a summary for tensorboard
+        :return: prediction of the model, validation loss, validation IoU, list of class-IoU's,
+                 summary if do_summary is true
+        """
         if do_summary:
             prediction, val_loss, val_iou, class_ious, summary = sess.run(
                 (self.y_pred, self.loss, self.iou, self.class_iou_list, self.merged), feed_dict={self.image: in_image,
@@ -62,6 +96,13 @@ class EnsembleModel:
         return prediction, val_loss, val_iou, class_ious, summary
 
     def inference(self, sess, in_image):
+        """
+        performs one inference step
+
+        :param sess: tensorflow session
+        :param in_image: input image
+        :return: prediction of the model
+        """
         prediction = sess.run(self.y_pred, feed_dict={self.image: in_image})
 
         return prediction

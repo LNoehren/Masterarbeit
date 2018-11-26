@@ -3,6 +3,15 @@ from layers import max_unpooling, conv_bn, spatial_dropout
 
 
 def segnet(image, *, n_classes=7, trainable=True):
+    """
+    SegNet model structure.
+    https://arxiv.org/pdf/1511.00561.pdf
+
+    :param image: input tensor
+    :param n_classes: number of classes
+    :param trainable: whether the variables of the model should be trainable or fixed
+    :return: the output tensor of the model. After Softmax is applied
+    """
     use_max_unpooling=True
     with tf.variable_scope("segnet"):
 

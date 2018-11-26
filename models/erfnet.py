@@ -3,6 +3,15 @@ from layers import e_net_initializer_block, non_bt_1d
 
 
 def erfnet(image, *, n_classes=7, trainable=True):
+    """
+    ERFNet model structure.
+    https://ieeexplore.ieee.org/document/8063438
+
+    :param image: input tensor
+    :param n_classes: number of classes
+    :param trainable: whether the variables of the model should be trainable or fixed
+    :return: the output tensor of the model. After Softmax is applied
+    """
     with tf.variable_scope("erfnet"):
 
         # encoder

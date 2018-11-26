@@ -3,6 +3,15 @@ from layers import bottleneck, e_net_initializer_block
 
 
 def e_net(image, *, n_classes=7, trainable=True):
+    """
+    E-Net model structure.
+    https://arxiv.org/pdf/1606.02147.pdf
+
+    :param image: input tensor
+    :param n_classes: number of classes
+    :param trainable: whether the variables of the model should be trainable or fixed
+    :return: the output tensor of the model. After Softmax is applied
+    """
     with tf.variable_scope("e_net"):
 
         init_block = e_net_initializer_block(image, filters=16, trainable=trainable)

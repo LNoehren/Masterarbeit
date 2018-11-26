@@ -12,6 +12,11 @@ from configuration import Configuration
 
 
 def main(config):
+    """
+    Main function. Initializes the tensorflow model, performs training, validation and tests.
+
+    :param config: Configuration Object containing all parameters.
+    """
     # create Tensorflow model
     if isinstance(config.model_structure, list):
         from models.ensemble_model import EnsembleModel as Model
