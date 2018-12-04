@@ -130,6 +130,7 @@ def iou(y_true, y_pred):
 
         div = tp + fp + fn
         return tf.cond(tf.equal(div, 0), lambda: -1.0, lambda: tp / div)
+        #return tf.cond(tf.equal(div, 0), lambda: 1.0, lambda: tp / div)
 
 
 def mean_iou(y_true, y_pred):

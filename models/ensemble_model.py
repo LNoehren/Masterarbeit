@@ -15,7 +15,7 @@ class EnsembleModel:
         :param width: image width
         :param height: image height
         :param n_classes: number of classes
-        :param model_structure: function that returns a prediction given an input image
+        :param model_structures: list of functions that return a prediction given an input image
         :param class_weights: class weights for the loss function
         """
         self.__name__ = "-".join([model.__name__ for model in model_structures])
@@ -29,7 +29,7 @@ class EnsembleModel:
 
         predictions = tf.stack(predictions)
         shape = tf.TensorShape([len(model_structures), 1, width, height, n_classes])
-        ensemble_weights = tf.get_variable("ensemble_weights", shape, dtype=tf.float32,
+        ensemble_weights = tf.get_variable("ensemble_weights", shape, dtype=tf.float32, constraint=tf.sigmoid,
                                            initializer=tf.random_uniform_initializer, trainable=True)
 
         self.y_pred = tf.reduce_sum(ensemble_weights * predictions, axis=0)

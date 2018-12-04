@@ -3,6 +3,7 @@ from models.u_net import u_net
 from models.segnet import segnet
 from models.e_net import e_net
 from models.erfnet import erfnet
+from models.deeplab_v3_plus import deeplab_v3_plus
 import os
 import warnings
 
@@ -12,7 +13,7 @@ class Configuration:
     This Class loads configuration parameters for the experiments from yaml files. The following fields are supported:
         - model_structure: default: undefined
             This needs to be specified to select the model that should be used. Currently supported models are
-            u_net, segnet, e_net and erfnet
+            u_net, segnet, e_net, erfnet, deeplab
         - dataset_path: default: None
             The path to the root directory of the dataset. The directory structure of the dataset has to be like this:
                 img/
@@ -115,19 +116,21 @@ class Configuration:
 
 def check_model_structure(name):
     """
-    returns the correct model structure function for a given name ('u_net', 'segnet', 'e_net' or 'erfnet')
+    returns the correct model structure function for a given name ('u_net', 'segnet', 'e_net', 'erfnet' or 'deeplab')
 
     :param name: the name of the model strucuture
     :return: model structure function
     :raises AttributeError if an unknown name was given
     """
-    if name == "u_net":
+    if name.lower() in ["u_net", "u-net", "unet", "u net"]:
         return u_net
-    elif name == "segnet":
+    elif name.lower() in ["segnet", "seg net"]:
         return segnet
-    elif name == "e_net":
+    elif name.lower() in ["e_net", "e-net", "enet", "e net"]:
         return e_net
-    elif name == "erfnet":
+    elif name.lower() in ["erfnet", "erf net"]:
         return erfnet
+    elif name.lower() in ["deeplab", "deeplabv3", "deeplabv3+", "deeplabv3plus", "deeplab_v3_plus"]:
+        return deeplab_v3_plus
     else:
         raise AttributeError("Unknown model structure: {}".format(name))

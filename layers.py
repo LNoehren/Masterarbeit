@@ -176,7 +176,25 @@ def conv_bn(input, name, trainable=True, **kwargs):
     :return: output of the relu layer
     """
     with tf.variable_scope(name):
-        conv = tf.layers.Conv2D(**kwargs)(input)
+        conv = tf.layers.Conv2D(trainable=trainable, **kwargs)(input)
+        bn = tf.layers.BatchNormalization(trainable=trainable)(conv)
+        act = tf.nn.relu(bn)
+
+        return act
+
+
+def separable_conv_bn(input, name, trainable=True, **kwargs):
+    """
+    separable convolution layer, batch normalization layer, relu layer
+
+    :param input: input tensor
+    :param name: name of the block
+    :param trainable: whether all variables should be trainable or fixed
+    :param kwargs: args for the convolution layer
+    :return: output of the relu layer
+    """
+    with tf.variable_scope(name):
+        conv = tf.layers.separable_conv2d(inputs=input, trainable=trainable, **kwargs)
         bn = tf.layers.BatchNormalization(trainable=trainable)(conv)
         act = tf.nn.relu(bn)
 
