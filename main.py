@@ -26,6 +26,10 @@ def main(config):
     model = Model(config.image_size[0], config.image_size[1], config.n_classes,
                   config.model_structure, config.class_weights)
 
+    # number of trainable parameters
+    number_of_params = np.sum([np.prod(var.get_shape().as_list()) for var in tf.trainable_variables()])
+    print("Number of parameters in Model: {}".format(number_of_params))
+
     if isinstance(config.model_structure, list):
         # load all sub-models for ensemble models
         saver = [tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=sub_model.__name__))

@@ -130,14 +130,14 @@ def iou(y_true, y_pred):
 
         div = tp + fp + fn
         return tf.cond(tf.equal(div, 0), lambda: -1.0, lambda: tp / div)
-        #return tf.cond(tf.equal(div, 0), lambda: 1.0, lambda: tp / div)
 
 
-def mean_iou(y_true, y_pred):
+def mean_iou(y_true_oh, y_true, y_pred):
     """
     computes mean IoU and class IoU's for all classes.
 
-    :param y_true: ground truth data in one-hot format
+    :param y_true_oh: ground truth data in one-hot format
+    :param y_true: ground truth data in not-one-hot format. Used to compute mask for ignore class
     :param y_pred: prediction of the network
     :return: mean-IoU of all classes and a list of all class-IoU's
     """
@@ -148,8 +148,11 @@ def mean_iou(y_true, y_pred):
         class_count = 0
         class_iou_list = []
 
+        ignore_class_mask = tf.not_equal(y_true, -1, name="ignore_class_mask")
+
         for i in range(n_classes):
-            class_iou = iou(y_true[:, :, :, i], y_pred[:, :, :, i])
+            class_iou = iou(tf.boolean_mask(y_true_oh[:, :, :, i], ignore_class_mask),
+                            tf.boolean_mask(y_pred[:, :, :, i], ignore_class_mask))
             class_count += tf.cond(tf.greater(class_iou, -1), lambda: 1, lambda: 0)
             result += tf.cond(tf.greater(class_iou, -1), lambda: class_iou, lambda: 0.0)
             class_iou_list.append(class_iou)
@@ -283,4 +286,5 @@ def class_remapping(gt, class_mapping):
     :return: ground truth with classes mapped according to the class mapping
     """
     new_gt = np.take(class_mapping, gt)
+    #print(gt, new_gt)
     return new_gt

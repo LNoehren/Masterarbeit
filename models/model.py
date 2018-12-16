@@ -24,7 +24,7 @@ class Model:
 
         self.y_pred = model_structure(self.image, n_classes=n_classes)
 
-        self.iou, self.class_ious = mean_iou(y_true_oh, self.y_pred)
+        self.iou, self.class_ious = mean_iou(y_true_oh, self.y_true, self.y_pred)
         tf.summary.scalar('Mean_IoU', self.iou)
         for i in range(self.class_ious.get_shape().as_list()[0]):
             tf.summary.scalar('Class_{}_IoU'.format(i), self.class_ious[i])
@@ -36,7 +36,7 @@ class Model:
         optimizer = tf.train.AdamOptimizer(learning_rate=self.lr, name='optimizer')
         self.train = optimizer.minimize(self.loss, name="train_op")
 
-        self.merged = tf.summary.merge_all()
+        self.summary = tf.summary.merge_all()
 
     def training(self, sess, in_image, gt, learning_rate, do_summary=False):
         """
@@ -51,9 +51,9 @@ class Model:
         """
         if do_summary:
             _, train_loss, train_iou, summary = sess.run(
-                (self.train, self.loss, self.iou, self.merged), feed_dict={self.image: in_image,
-                                                                           self.y_true: gt,
-                                                                           self.lr: learning_rate})
+                (self.train, self.loss, self.iou, self.summary), feed_dict={self.image: in_image,
+                                                                            self.y_true: gt,
+                                                                            self.lr: learning_rate})
         else:
             _, train_loss, train_iou = sess.run(
                 (self.train, self.loss, self.iou), feed_dict={self.image: in_image,
@@ -75,8 +75,8 @@ class Model:
         """
         if do_summary:
             prediction, val_loss, val_iou, class_ious, summary = sess.run(
-                (self.y_pred, self.loss, self.iou, self.class_ious, self.merged), feed_dict={self.image: in_image,
-                                                                                             self.y_true: gt})
+                (self.y_pred, self.loss, self.iou, self.class_ious, self.summary), feed_dict={self.image: in_image,
+                                                                                              self.y_true: gt})
         else:
             prediction, val_loss, val_iou, class_ious = sess.run(
                 (self.y_pred, self.loss, self.iou, self.class_ious), feed_dict={self.image: in_image,

@@ -34,7 +34,7 @@ class EnsembleModel:
 
         self.y_pred = tf.reduce_sum(ensemble_weights * predictions, axis=0)
 
-        self.iou, self.class_iou_list = mean_iou(y_true_oh, self.y_pred)
+        self.iou, self.class_iou_list = mean_iou(y_true_oh, self.y_true, self.y_pred)
         tf.summary.scalar('Mean_IoU', self.iou)
         for i in range(self.class_iou_list.get_shape().as_list()[0]):
             tf.summary.scalar('Class_{}_IoU'.format(i), self.class_iou_list[i])
