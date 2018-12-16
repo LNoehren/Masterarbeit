@@ -5,6 +5,8 @@ from layers import max_unpooling, conv_bn, spatial_dropout
 def segnet(image, *, n_classes=7, trainable=True):
     """
     SegNet model structure.
+    Number of parameters in Model: 24 897 255
+
     https://arxiv.org/pdf/1511.00561.pdf
 
     :param image: input tensor

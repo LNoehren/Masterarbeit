@@ -5,6 +5,8 @@ from layers import spatial_dropout
 def u_net(image, *, n_classes=7, trainable=True):
     """
     U-Net model structure.
+    Number of parameters in Model: 34 513 735
+
     https://arxiv.org/pdf/1505.04597.pdf
 
     :param image: input tensor

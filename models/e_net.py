@@ -5,6 +5,8 @@ from layers import bottleneck, e_net_initializer_block
 def e_net(image, *, n_classes=7, trainable=True):
     """
     E-Net model structure.
+    Number of parameters in Model: 405 115
+
     https://arxiv.org/pdf/1606.02147.pdf
 
     :param image: input tensor
@@ -42,7 +44,7 @@ def e_net(image, *, n_classes=7, trainable=True):
         bottleneck3_7 = bottleneck(bottleneck3_6, filters=128, dropout_rate=0.1, trainable=trainable, asymmetric=True, name="bottleneck3_7")
         bottleneck3_8 = bottleneck(bottleneck3_7, filters=128, dropout_rate=0.1, trainable=trainable, dilation=16, name="bottleneck3_8")
 
-        #decoder
+        # decoder
         bottleneck4_0 = bottleneck(bottleneck3_8, filters=64, dropout_rate=0.1, upsampling_indices=index2, trainable=trainable, name="bottleneck4_0")
         bottleneck4_1 = bottleneck(bottleneck4_0, filters=64, dropout_rate=0.1, trainable=trainable, name="bottleneck4_1")
         bottleneck4_2 = bottleneck(bottleneck4_1, filters=64, dropout_rate=0.1, trainable=trainable, name="bottleneck4_2")

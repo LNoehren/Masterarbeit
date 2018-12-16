@@ -5,6 +5,8 @@ from layers import e_net_initializer_block, non_bt_1d
 def erfnet(image, *, n_classes=7, trainable=True):
     """
     ERFNet model structure.
+    Number of parameters in Model: 2 057 379
+
     https://ieeexplore.ieee.org/document/8063438
 
     :param image: input tensor
