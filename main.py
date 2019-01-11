@@ -9,6 +9,7 @@ import argparse
 from tensorflow.python import debug as tf_debug
 from data_generation import DataGenerator
 from configuration import Configuration
+import warnings
 
 
 def main(config):
@@ -31,11 +32,19 @@ def main(config):
     print("Number of parameters in Model: {}".format(number_of_params))
 
     if isinstance(config.model_structure, list):
+        if not config.restore_softmax:
+            warnings.warn("The softmax layer should always be restored for ensemble models, since it wont be trained")
+
         # load all sub-models for ensemble models
         saver = [tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=sub_model.__name__))
                  for sub_model in config.model_structure]
     else:
-        saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
+        variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__)
+        if not config.restore_softmax:
+            # remove softmax layer from variable set
+            variables = [var for var in variables if model.__name__ + "/classes/" not in var.name]
+
+        saver = tf.train.Saver(variables)
 
     train_paths = get_file_list(config.dataset_path + "img/train")
     val_paths = get_file_list(config.dataset_path + "img/val")
@@ -71,10 +80,16 @@ def main(config):
             if isinstance(saver, list):
                 for i in range(len(saver)):
                     saver[i].restore(sess, config.load_path[i])
-                    print("Model {} restored.".format(i+1))
+                    print("Model '{}' restored.".format(config.model_structure[i].__name__))
             else:
                 saver.restore(sess, config.load_path)
-                print("Model restored.")
+
+                # after the model is restored the softmax layer can be added to the saver again
+                if not config.restore_softmax:
+                    print("Model '{}' restored without softmax layer.".format(model.__name__))
+                    saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
+                else:
+                    print("Model '{}' restored.".format(model.__name__))
 
         # create log file
         with open(log_file, "w") as log:
