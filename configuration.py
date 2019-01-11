@@ -44,9 +44,9 @@ class Configuration:
         - load_path: default: None
             Path to a trained model that should be loaded. If it is None no model will be loaded.
         - use_augs: default: False
-            Whether or not to use augmentations during training
-        - class_weights: default: True
-            Whether to use class weights in the loss function. Only available for the vocalfolds Dataset.
+            Whether or not to use online augmentations during training
+        - class_weights: default: None
+            Class weights that should be applied to the categorical cross entropy.
         - n_processes: default: 8
             The number of processes that should be used for Pre-Processing (reading images, augmentations)
         - debug: default: False
@@ -123,7 +123,7 @@ def check_model_structure(name):
     """
     returns the correct model structure function for a given name ('u_net', 'segnet', 'e_net', 'erfnet' or 'deeplab')
 
-    :param name: the name of the model strucuture
+    :param name: the name of the model structure
     :return: model structure function
     :raises AttributeError if an unknown name was given
     """
