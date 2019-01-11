@@ -1,5 +1,6 @@
 import tensorflow as tf
 from utils import get_file_list, write_overlaid_result, compute_mean_class_iou, de_normalize_image
+from models.model import Model
 import numpy as np
 from random import shuffle
 from tqdm import tqdm
@@ -19,11 +20,6 @@ def main(config):
     :param config: Configuration Object containing all parameters.
     """
     # create Tensorflow model
-    if isinstance(config.model_structure, list):
-        from models.ensemble_model import EnsembleModel as Model
-    else:
-        from models.model import Model
-
     model = Model(config.image_size[0], config.image_size[1], config.n_classes,
                   config.model_structure, config.class_weights)
 
@@ -31,7 +27,9 @@ def main(config):
     number_of_params = np.sum([np.prod(var.get_shape().as_list()) for var in tf.trainable_variables()])
     print("Number of parameters in Model: {}".format(number_of_params))
 
-    if isinstance(config.model_structure, list):
+    ensemble = isinstance(config.model_structure, list)
+
+    if ensemble:
         if not config.restore_softmax:
             warnings.warn("The softmax layer should always be restored for ensemble models, since it wont be trained")
 
@@ -77,10 +75,10 @@ def main(config):
 
         # load weights from previous training
         if config.load_path is not None:
-            if isinstance(saver, list):
+            if ensemble:
                 for i in range(len(saver)):
                     saver[i].restore(sess, config.load_path[i])
-                    print("Model '{}' restored.".format(config.model_structure[i].__name__))
+                    print("Model '{}' restored.".format(config.model_structure[i]))
             else:
                 saver.restore(sess, config.load_path)
 
@@ -169,7 +167,7 @@ def main(config):
 
             if mean_val_iou > best_val_iou:
                 # save model in case of improvement only for non ensemble models
-                if not isinstance(saver, list):
+                if not ensemble:
                     save_path = saver.save(sess, result_dir + "saved_model/{}.ckpt".format(model.__name__))
                     print("Model saved in {}".format(save_path))
                 best_val_iou = mean_val_iou

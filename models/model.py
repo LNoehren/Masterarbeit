@@ -6,6 +6,8 @@ class Model:
     """
     Class containing all the tensorflow variables for training, validation, inference. Model structure can be exchanged.
     The loss function for the model is a weighted categorical cross entropy, the optimizer is Adam, the metric is IoU.
+    If model structure is a list an ensemble model will be build. All sub-models in an ensemble model are set to
+    un-trainable and only the weight tensor combining them will be trained.
     """
     def __init__(self, width, height, n_classes, model_structure, class_weights=None):
         """
@@ -17,12 +19,28 @@ class Model:
         :param model_structure: function that returns a prediction given an input image
         :param class_weights: class weights for the loss function
         """
-        self.__name__ = model_structure.__name__
+        ensemble = isinstance(model_structure, list)
+
+        self.__name__ = model_structure.__name__ if not ensemble \
+            else "-".join([model.__name__ for model in model_structure])
         self.image = tf.placeholder(dtype=tf.float32, shape=(None, width, height, 3), name="image")
         self.y_true = tf.placeholder(dtype=tf.int32, shape=(None, width, height), name="gt")
         y_true_oh = tf.one_hot(self.y_true, n_classes, name="one_hot")
 
-        self.y_pred = model_structure(self.image, n_classes=n_classes)
+        if ensemble:
+            predictions = []
+            for model in model_structure:
+                predictions.append(model(self.image, n_classes=n_classes, trainable=False))
+
+            predictions = tf.stack(predictions)
+            shape = tf.TensorShape([len(model_structure), 1, width, height, n_classes])
+            ensemble_weights = tf.get_variable("ensemble_weights", shape, dtype=tf.float32, constraint=tf.sigmoid,
+                                               initializer=tf.random_uniform_initializer, trainable=True)
+
+            self.y_pred = tf.reduce_sum(ensemble_weights * predictions, axis=0)
+
+        else:
+            self.y_pred = model_structure(self.image, n_classes=n_classes)
 
         self.iou, self.class_ious = mean_iou(y_true_oh, self.y_true, self.y_pred)
         tf.summary.scalar('Mean_IoU', self.iou)
