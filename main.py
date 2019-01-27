@@ -207,7 +207,7 @@ def main(config):
                               test_paths[step * config.batch_sizes["test"] + b].split('/')[-1]
                 img = de_normalize_image(image_batch[b, :, :, :],
                                          config.normalization_params[0], config.normalization_params[1])
-                write_overlaid_result(result[b, :, :, :], img, result_path,
+                write_overlaid_result(result[b, :, :, :], gt_batch[b, :, :], img, result_path,
                                       config.class_labels, tuple(config.image_size))
 
         test_data_gen.stop()

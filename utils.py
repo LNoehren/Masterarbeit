@@ -69,36 +69,28 @@ def write_image(img, path):
     cv2.imwrite(path, img)
 
 
-def write_overlaid_result(net_out, img, path, class_labels, image_size):
+def write_overlaid_result(net_out, gt, img, path, class_labels, image_size):
     """
     converts the net out to a colored representation and writes the image overlaid with the net out.
 
     :param net_out: the output of the Network
+    :param gt: the correct ground truth for the image. If this is not None every wrong classified pixel will be gray
     :param img: the input image corresponding to the net out
     :param path: write path
     :param class_labels: class labels containing the colors for every class
     :param image_size: the width and height of the image
     """
-    result = transform_net_out(net_out, class_labels)
-    overlaid = 0.5 * result + 0.5 * img
+    class_mapping = [class_info[0] for class_info in class_labels]
+    net_out = np.argmax(net_out, axis=-1)
+
+    if gt is not None:
+        class_mapping.append([100, 100, 100])
+        net_out = np.where(np.logical_or(net_out == gt, gt < 0), net_out, np.full(net_out.shape, -1))
+    rgb_net_out = np.take(class_mapping, net_out, axis=0)
+
+    overlaid = 0.5 * rgb_net_out + 0.5 * img
     overlaid = np.reshape(overlaid, image_size + (3,))
     write_image(overlaid, path)
-
-
-def transform_net_out(net_out, class_labels):
-    """
-    transforms the network output in a colored representation for visualizing the results.
-
-    :param net_out: the output of the Network
-    :param class_labels: class labels containing the colors for every class
-    :return: the class labels mapped to the network output
-    """
-    class_mapping = [class_info[0] for class_info in class_labels]
-
-    net_out = np.argmax(net_out, axis=-1)
-    result = np.take(class_mapping, net_out, axis=0)
-
-    return result
 
 
 def one_hot_encoding(data, n_classes):

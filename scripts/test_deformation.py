@@ -18,4 +18,4 @@ class_labels = [[[105,105,105], "void"],
 
 write_image(def_im, "test.png")
 write_overlaid_result(def_gt, def_im, "test_gt.png", class_labels, (512, 512))
-write_overlaid_result(gt, image, "orig_gt.png", class_labels, (512, 512))
+write_overlaid_result(gt, None, image, "orig_gt.png", class_labels, (512, 512))

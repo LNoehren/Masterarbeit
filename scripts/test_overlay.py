@@ -37,4 +37,4 @@ class_labels = [[[105,105,105], "void"],
 #
 # gt = class_remapping(gt, class_mapping)
 
-write_overlaid_result(gt, image, "test.png", class_labels, (512, 512))
+write_overlaid_result(gt, None, image, "test.png", class_labels, (512, 512))
