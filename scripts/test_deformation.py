@@ -1,10 +1,11 @@
 from utils import get_image_gt, write_image, write_overlaid_result
-from augmentations import elastic_deformation
+from augmentations import elastic_deformation, random_crop
 
 
 image, gt = get_image_gt("/home/lennard/Datasets/vocalfolds-master/img/train/0001.png")
 
-def_im, def_gt = elastic_deformation(image, gt, 5000, 100)
+#def_im, def_gt = elastic_deformation(image, gt, 5000, 100)
+def_im, def_gt = random_crop(image, gt, int(image.shape[0]/2), int(image.shape[1]/2))
 
 class_labels = [[[105,105,105], "void"],
                 [[255,  0,  0], "vocal folds"],
