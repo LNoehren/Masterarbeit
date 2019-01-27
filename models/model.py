@@ -33,6 +33,7 @@ class Model:
                 predictions.append(model(self.image, n_classes=n_classes, trainable=False))
 
             predictions = tf.stack(predictions)
+            # ensemble networks only work with batch size 1
             shape = tf.TensorShape([len(model_structure), 1, width, height, n_classes])
             ensemble_weights = tf.get_variable("ensemble_weights", shape, dtype=tf.float32, constraint=tf.sigmoid,
                                                initializer=tf.random_uniform_initializer, trainable=True)

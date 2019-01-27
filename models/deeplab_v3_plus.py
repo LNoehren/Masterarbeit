@@ -102,9 +102,8 @@ def resnet101(image, trainable=True):
                 conv4 = conv_bn(conv3, filters=filters, kernel_size=(1, 3), padding="same", dilation_rate=dilation_rate,
                                 trainable=trainable, kernel_initializer=tf.initializers.variance_scaling(init_scaling),
                                 bias_initializer=tf.initializers.variance_scaling(init_scaling), name="conv4")
-                dropout = spatial_dropout(conv4, 0.3, name="dropout")
 
-                result = tf.nn.relu(input + dropout, name="relu")
+                result = tf.nn.relu(input + conv4, name="relu")
                 return result
 
         scale_factor = 1.0
@@ -189,6 +188,7 @@ def deeplab_v3_plus(image, *, n_classes=7, trainable=True):
         # decoder
         new_size = [aspp_conv4.get_shape().as_list()[1] * 4, aspp_conv4.get_shape().as_list()[2] * 4]
         upsample0 = tf.image.resize_images(aspp_conv4, new_size, align_corners=True)
+
         decoder_conv0 = tf.layers.Conv2D(filters=48, kernel_size=(1, 1), padding="same", trainable=trainable, activation="relu", name="decoder_conv0")(high_level_features)
         decoder_concat = tf.concat([upsample0, decoder_conv0], axis=-1, name="decoder_concat")
 
