@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 import os
+import matplotlib.pyplot as plt
 
 
 def get_file_list(root_path):
@@ -278,5 +279,27 @@ def class_remapping(gt, class_mapping):
     :return: ground truth with classes mapped according to the class mapping
     """
     new_gt = np.take(class_mapping, gt)
-    #print(gt, new_gt)
     return new_gt
+
+
+def save_histogram(data_array, x_label, y_label, filename, text=None):
+    """
+    creates a histogram and saves it in a file.
+
+    :param data_array: histogram data
+    :param x_label: label for x-axis
+    :param y_label: label for y-axis
+    :param filename: filename for the histogram file
+    :param text: if not None, text that will be added in the top left corner of the histogram
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    ax.hist(data_array)
+
+    if text:
+        ax.text(0.3, 0.92, text, horizontalalignment="center", verticalalignment="center", transform=ax.transAxes)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    ax.grid(True)
+    plt.savefig(filename)

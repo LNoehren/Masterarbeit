@@ -1,5 +1,5 @@
 import tensorflow as tf
-from utils import get_file_list, write_overlaid_result, compute_mean_class_iou, de_normalize_image
+from utils import get_file_list, write_overlaid_result, compute_mean_class_iou, de_normalize_image, save_histogram
 from models.model import Model
 import numpy as np
 from random import shuffle
@@ -10,7 +10,6 @@ import argparse
 from tensorflow.python import debug as tf_debug
 from data_generation import DataGenerator
 from configuration import Configuration
-import warnings
 
 
 def main(config):
@@ -21,7 +20,7 @@ def main(config):
     """
     # create Tensorflow model
     model = Model(config.image_size[0], config.image_size[1], config.n_classes,
-                  config.model_structure, config.class_weights)
+                  config.model_structure, config.class_weights, is_rgb=config.is_rgb)
 
     # number of trainable parameters
     number_of_params = np.sum([np.prod(var.get_shape().as_list()) for var in tf.trainable_variables()])
@@ -30,17 +29,23 @@ def main(config):
     ensemble = isinstance(config.model_structure, list)
 
     if ensemble:
-        if not config.restore_softmax:
-            warnings.warn("The softmax layer should always be restored for ensemble models, since it wont be trained")
+        if config.pre_training:
+            raise NotImplementedError("Pre-Training with different Datasets is not supported for Ensemble Models")
 
         # load all sub-models for ensemble models
         saver = [tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=sub_model.__name__))
                  for sub_model in config.model_structure]
     else:
         variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__)
-        if not config.restore_softmax:
+        if config.pre_training == "cityscapes":
             # remove softmax layer from variable set
             variables = [var for var in variables if model.__name__ + "/classes/" not in var.name]
+        elif config.pre_training == "imagenet":
+            # only load encoder variables
+            if model.__name__ is not "deeplab_v3_plus":
+                raise NotImplementedError("ImageNet Pre-Training is currently only supported for DeepLabV3+")
+            variables = {var.name.split("deeplab_v3_plus/")[-1].split(":")[0]: var for var in
+                         tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="deeplab_v3_plus/resnet101")}
 
         saver = tf.train.Saver(variables)
 
@@ -58,6 +63,7 @@ def main(config):
     time = datetime.datetime.now().strftime("%y-%m-%d_%H%M%S")
     result_dir = "results/{}_{}/".format(model.__name__, time)
     os.makedirs(result_dir + "saved_model")
+    os.makedirs(result_dir + "diagrams")
     log_file = result_dir + "train_log.csv"
 
     config.save_config(result_dir + "config.yml")
@@ -82,9 +88,9 @@ def main(config):
             else:
                 saver.restore(sess, config.load_path)
 
-                # after the model is restored the softmax layer can be added to the saver again
-                if not config.restore_softmax:
-                    print("Model '{}' restored without softmax layer.".format(model.__name__))
+                if config.pre_training:
+                    # after the pre-trained model is restored all variables can be added to the saver
+                    print("Model '{}' restored after Pre-Training with {}.".format(model.__name__, config.pre_training))
                     saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__))
                 else:
                     print("Model '{}' restored.".format(model.__name__))
@@ -157,6 +163,13 @@ def main(config):
                 mean_train_loss, mean_train_iou, mean_val_loss, mean_val_iou))
             print("class ious: {}".format(mean_class_iou))
 
+            save_histogram(train_iou_list, "Training IoU", "Number of Samples",
+                           result_dir + "diagrams/train_histogram.png",
+                           "Mean-IoU={}".format(np.mean(train_iou_list).round(decimals=2)))
+            save_histogram(val_iou_list, "Validation IoU", "Number of Samples",
+                           result_dir + "diagrams/val_histogram.png",
+                           "Mean-IoU={}".format(np.mean(val_iou_list).round(decimals=2)))
+
             # write to log
             with open(log_file, "a") as log:
                 log.write("{},{},{},{},{}".format(epoch+1, mean_train_loss, mean_train_iou,
@@ -211,6 +224,9 @@ def main(config):
                                       config.class_labels, tuple(config.image_size))
 
         test_data_gen.stop()
+
+        save_histogram(test_iou_list, "Test IoU", "Number of Samples", result_dir + "diagrams/test_histogram.png",
+                       "Mean-IoU={}".format(np.mean(test_iou_list).round(decimals=2)))
 
         mean_class_iou = compute_mean_class_iou(np.stack(class_iou_list))
         print("test loss: {} - test iou: {}".format(np.mean(test_loss_list), np.mean(test_iou_list)))

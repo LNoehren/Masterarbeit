@@ -60,10 +60,11 @@ class Configuration:
             List that is used to map one class to another. For example cityscapes has in total 34 classes, but usually
             only 19 are used for training, so the mapping should be a list with 34 elements that map each class to one
             of the 19 main classes or -1 to ignore it.
-        - restore_softmax: default True
-            Whether or not the softmax layer of the model should be restored from the checkpoint. Will be ignored if
-            no load_path is specified. This should be set to False when a pre-trained model with a different number of
-            classes is loaded. The trained softmax layer will be saved even if set to False.
+        - pre_training: default None
+            String that specifies which Dataset was used for pre-training. Can either be Cityscapes, ImageNet, or None
+            to use no pre-training.
+        - is_rgb : default True
+            whether the Dataset contains rgb- or grayscale-images.
 
     Check the configs directory for example config files for the vocalfolds and cityscapes datasets.
     """
@@ -73,7 +74,7 @@ class Configuration:
 
         supported_fields = ["model_structure", "dataset_path", "epochs", "learning_rate", "batch_sizes", "image_size",
                             "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug",
-                            "normalization_params", "class_labels", "class_mapping", "restore_softmax"]
+                            "normalization_params", "class_labels", "class_mapping", "pre_training", "is_rgb"]
         for key in data.keys():
             if key not in supported_fields:
                 warnings.warn("Unknown Field in config file: {}: {}".format(key, data[key]), SyntaxWarning)
@@ -101,7 +102,12 @@ class Configuration:
         self.normalization_params = data.get("normalization_params", [None, None])
         self.class_labels = data.get("class_labels", None)
         self.class_mapping = data.get("class_mapping", None)
-        self.restore_softmax = data.get("restore_softmax", True)
+        self.pre_training = data.get("pre_training", None)
+        if self.pre_training:
+            self.pre_training = self.pre_training.lower()
+            assert not (self.pre_training is "cityscapes" or self.pre_training is "imagenet"),\
+                "pre_training parameter must either be cityscapes or imagenet, but is {}".format(self.pre_training)
+        self.is_rgb = data.get("is_rgb", True)
 
     def save_config(self, save_path):
         """

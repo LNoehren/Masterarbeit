@@ -27,6 +27,9 @@ def worker_task(path, queue, use_augs, mean, std, class_mapping):
 
     image, gt = get_image_gt(path)
 
+    if len(image.shape) < 3:
+        image = np.resize(image, image.shape + (1,))
+
     if mean and std:
         image = normalize_image(image, mean, std)
 
@@ -45,7 +48,7 @@ class DataGenerator:
     """
     Data Generator that reads data and performs pre-processing of the data in parallel for best performance.
     """
-    def __init__(self, path_list, batch_size, n_processes, normalization_params, use_augs=False, class_mapping=None):
+    def __init__(self, path_list, batch_size, n_processes, normalization_params, use_augs=False, class_mapping=None, steps=None):
         """
         initializes varibles for Data Generation and starts the master thread, which supervises the data generation.
 
@@ -66,6 +69,7 @@ class DataGenerator:
         self.master_thread.start()
         self.mean, self.std = normalization_params
         self.class_mapping = class_mapping
+        self.steps = steps * self.batch_size if steps else len(path_list)
 
     def stop(self):
         """
@@ -99,7 +103,8 @@ class DataGenerator:
         """
         with Pool(processes=self.n_processes) as pool:
             res = []
-            for path in self.path_list:
+            for i in range(self.steps):
+                path = self.path_list[i % len(self.path_list)]
                 res.append(pool.apply_async(worker_task,
                                             args=(path, queue, self.use_augs, self.mean, self.std, self.class_mapping)))
 
