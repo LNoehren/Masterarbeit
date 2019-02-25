@@ -115,3 +115,25 @@ def perform_augmentations(image, gt_image, augmentations, probabilities):
             image, gt_image = augmentations[i](image, gt_image)
 
     return image, gt_image
+
+
+def resize_image(image, new_size):
+    """
+    resizes an image to (new_size x new_size) without skewing it. This is done by resizing the shorter size to new_size
+    and then cropping the longer size
+
+    :param image: input image
+    :param new_size: side length of the new image
+    :return: image of size (new_size x new_size)
+    """
+    height, width = image.shape[:2]
+    quad_size = min(height, width)
+
+    if len(image.shape) == 3:
+        cropped_image = image[:quad_size, :quad_size, :]
+    else:
+        cropped_image = image[:quad_size, :quad_size]
+
+    resized_image = cv2.resize(cropped_image, (new_size, new_size))
+
+    return resized_image
