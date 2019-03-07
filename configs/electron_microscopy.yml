@@ -1,0 +1,19 @@
+model_structure: unet
+dataset_path: /home/lennard/Datasets/electron_microscopy/
+epochs: 100
+learning_rate: 1e-4
+batch_sizes:
+  train: 1
+  validation: 1
+  test: 1
+image_size:
+  - 768
+  - 1024
+n_classes: 2
+class_weights: [0.1, 8.73221320017] #0.02862962622
+use_augs: False
+class_labels:
+  - [[  0,  0,  0], "background"]
+  - [[255,  255,  255], "mitochondria"]
+is_rgb: False
+#load_path: results/deeplab_v3_plus_19-01-06_130708/saved_model/deeplab_v3_plus.ckpt

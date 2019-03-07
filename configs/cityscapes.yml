@@ -1,7 +1,7 @@
-model_structure: erfnet
+model_structure: deeplab
 dataset_path: /home/lennard/Datasets/Cityscapes/
 epochs: 100
-learning_rate: 1e-2
+learning_rate: 1e-4
 batch_sizes:
   train: 1
   validation: 1
@@ -10,9 +10,9 @@ image_size:
   - 512
   - 1024
 n_classes: 19
-normalization_params:
-  - [72.45996064, 82.30920661, 71.8585933]
-  - [46.99697658, 47.7633243, 46.96281819]
+#normalization_params:
+#  - [72.45996064, 82.30920661, 71.8585933]
+#  - [46.99697658, 47.7633243, 46.96281819]
 class_labels:
   - [[128, 64,128], "road"]
   - [[244, 35,232], "sidewalk"]
@@ -35,3 +35,5 @@ class_labels:
   - [[119, 11, 32], "bicycle"]
   - [[  0,  0,  0], "void"]
 class_mapping: [-1, -1, -1, -1, -1, -1, -1, 0, 1, -1, -1, 2, 3, 4, -1, -1, -1, 5, -1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, -1, -1, 16, 17, 18]
+pre_training: imagenet
+load_path: results/best_results/resnet101_imagenet/saved_model/resnet101.ckpt
