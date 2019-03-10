@@ -1,5 +1,78 @@
 import tensorflow as tf
-from layers import separable_conv_bn, conv_bn, spatial_dropout
+from layers import separable_conv_bn, conv_bn
+
+
+def resnet101_original(image, trainable=True):
+    with tf.variable_scope("resnet101_original"):
+        def residual_block(input, filter_size, id, init_scaling=1.0, dilation_rate=1):
+            small_filter = filter_size // 4
+            conv1 = tf.layers.Conv2D(small_filter, kernel_size=(1, 1), padding="same", dilation_rate=dilation_rate, trainable=trainable, activation="relu",
+                                     kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     name="conv_{}_1".format(id))(input)
+            conv2 = tf.layers.Conv2D(small_filter, kernel_size=(3, 3), padding="same", dilation_rate=dilation_rate, trainable=trainable, activation="relu",
+                                     kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     name="conv_{}_2".format(id))(conv1)
+            conv3 = tf.layers.Conv2D(filter_size, kernel_size=(1, 1), padding="same", dilation_rate=dilation_rate, trainable=trainable,
+                                     kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     name="conv_{}_3".format(id))(conv2)
+            return tf.nn.relu(conv3 + input)
+
+        def downsample_block(input, filter_size, id, init_scaling=1.0):
+            small_filter = filter_size // 4
+            shortcut = tf.layers.Conv2D(filter_size, kernel_size=(1, 1), strides=(2, 2), padding="same", trainable=trainable,
+                                        kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                        bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                        name="shortcut_connection_{}".format(id))(input)
+            conv1 = tf.layers.Conv2D(small_filter, kernel_size=(1, 1), strides=(2, 2), padding="same", trainable=trainable, activation="relu",
+                                     kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     name="conv_{}_1".format(id))(input)
+            conv2 = tf.layers.Conv2D(small_filter, kernel_size=(3, 3), padding="same", trainable=trainable, activation="relu",
+                                     kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     name="conv_{}_2".format(id))(conv1)
+            conv3 = tf.layers.Conv2D(filter_size, kernel_size=(1, 1), padding="same", trainable=trainable,
+                                     kernel_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     bias_initializer=tf.initializers.variance_scaling(init_scaling),
+                                     name="conv_{}_3".format(id))(conv2)
+
+            return tf.nn.relu(conv3 + shortcut)
+
+        scale_factor = 1.0
+
+        conv1 = tf.layers.Conv2D(64, kernel_size=(7, 7), strides=(2, 2), padding="same", trainable=trainable, activation="relu",
+                                 kernel_initializer=tf.initializers.variance_scaling(scale_factor),
+                                 bias_initializer=tf.initializers.variance_scaling(scale_factor),
+                                 name="conv1")(image)
+
+        scale_factor *= 0.75
+
+        block2 = tf.layers.MaxPooling2D(pool_size=(3, 3), strides=2, padding="same", trainable=trainable, name="pool1")(conv1)
+        block2 = tf.pad(block2, paddings=tf.constant([[0, 0], [0, 0], [0, 0], [96, 96]]))
+        for i in range(3):
+            block2 = residual_block(block2, 256, "2_{}".format(i), init_scaling=scale_factor)
+
+        scale_factor *= 0.75
+
+        block3 = downsample_block(block2, 512, "3_0", init_scaling=scale_factor)
+        for i in range(3):
+            block3 = residual_block(block3, 512, "3_{}".format(i + 1), init_scaling=scale_factor)
+
+        scale_factor *= 0.75
+
+        block4 = downsample_block(block3, 1024, "4_0", init_scaling=scale_factor)
+        for i in range(22):
+            block4 = residual_block(block4, 1024, "4_{}".format(i + 1), init_scaling=scale_factor)
+            scale_factor *= 0.75
+
+        block5 = tf.pad(block4, paddings=tf.constant([[0, 0], [0, 0], [0, 0], [512, 512]]))
+        for i in range(3):
+            block5 = residual_block(block5, 2048, "5_{}".format(i+1), dilation_rate=2, init_scaling=scale_factor)
+
+        return block5, block2
 
 
 def xception(image, trainable=True):
@@ -44,15 +117,15 @@ def xception(image, trainable=True):
             middle = middle_flow_block(middle, i)
 
         # exit_flow
-        conv17_0 = separable_conv_bn(middle, filters=728, kernel_size=(3, 3), dilation_rate=2, padding="same", trainable=trainable, name="conv17_0")
-        conv17_1 = separable_conv_bn(conv17_0, filters=1024, kernel_size=(3, 3), dilation_rate=2, padding="same", trainable=trainable, name="conv17_1")
-        conv17_2 = separable_conv_bn(conv17_1, filters=1024, kernel_size=(3, 3), dilation_rate=2, padding="same", trainable=trainable, name="conv17_2")
+        conv17_0 = separable_conv_bn(middle, filters=728, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv17_0")
+        conv17_1 = separable_conv_bn(conv17_0, filters=1024, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv17_1")
+        conv17_2 = separable_conv_bn(conv17_1, filters=1024, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv17_2")
         skip_conv4 = tf.layers.Conv2D(filters=1024, kernel_size=(1, 1), padding="same", trainable=trainable, name="skip_conv4")(middle)
         add4 = tf.add(skip_conv4, conv17_2, name="skip4_add")
 
-        conv17_3 = separable_conv_bn(add4, filters=1536, kernel_size=(3, 3), dilation_rate=4, padding="same", trainable=trainable, name="conv17_3")
-        conv17_4 = separable_conv_bn(conv17_3, filters=1536, kernel_size=(3, 3), dilation_rate=4, padding="same", trainable=trainable, name="conv17_4")
-        conv17_5 = separable_conv_bn(conv17_4, filters=2048, kernel_size=(3, 3), dilation_rate=4, padding="same", trainable=trainable, name="conv17_5")
+        conv17_3 = separable_conv_bn(add4, filters=1536, kernel_size=(3, 3), dilation_rate=2, padding="same", trainable=trainable, name="conv17_3")
+        conv17_4 = separable_conv_bn(conv17_3, filters=1536, kernel_size=(3, 3), dilation_rate=2, padding="same", trainable=trainable, name="conv17_4")
+        conv17_5 = separable_conv_bn(conv17_4, filters=2048, kernel_size=(3, 3), dilation_rate=2, padding="same", trainable=trainable, name="conv17_5")
         return conv17_5, high_level_features
 
 

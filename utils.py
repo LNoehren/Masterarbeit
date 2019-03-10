@@ -303,3 +303,5 @@ def save_histogram(data_array, x_label, y_label, filename, text=None):
     plt.ylabel(y_label)
     ax.grid(True)
     plt.savefig(filename)
+
+    plt.close()
