@@ -7,7 +7,8 @@ class Model:
     Class containing all the tensorflow variables for training, validation, inference. Model structure can be exchanged.
     The loss function for the model is a weighted categorical cross entropy, the optimizer is Adam, the metric is IoU.
     If model structure is a list an ensemble model will be build. All sub-models in an ensemble model are set to
-    un-trainable and only the weight tensor combining them will be trained.
+    un-trainable and only the weight tensor combining them will be trained. In Esnemble Networks only Batch Size=1 is
+    supported.
     """
     def __init__(self, width, height, n_classes, model_structure, class_weights=None):
         """

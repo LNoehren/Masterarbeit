@@ -3,6 +3,20 @@ from layers import separable_conv_bn, conv_bn
 
 
 def resnet101_original(image, trainable=True):
+    """
+    Original Resnet 101 to be used as backbone fpr DeepLabV3+. As described in the DeepLab Paper the last downsampling
+    layer is removed and dilated convolutions with dilation rate=2 are used in the last block.
+    The parameters are initialized with a variance scaling initializer. The scale Factor is multiplied with 0.75
+    throughout the Network similar to the findings of this paper:
+    https://arxiv.org/pdf/1803.01719.pdf
+
+    ResNet101:
+    https://arxiv.org/pdf/1512.03385.pdf
+
+    :param image: input tensor
+    :param trainable: whether the variables of the model should be trainable or fixed
+    :return: output of the final block and of the second block for a skip connection
+    """
     with tf.variable_scope("resnet101_original"):
         def residual_block(input, filter_size, id, init_scaling=1.0, dilation_rate=1):
             small_filter = filter_size // 4
@@ -78,8 +92,7 @@ def resnet101_original(image, trainable=True):
 def xception(image, trainable=True):
     """
     Xception model feature extractor for DeepLabV3+. The last striding is replaced by dilated Convolutions to reduce
-    the output stride to 16. The dilation rates are chosen as described in DeepLabV3 with a multi-grid (1, 2, 4) and
-    rates (2, 4).
+    the output stride to 16.
 
     https://arxiv.org/pdf/1610.02357.pdf
 
@@ -226,12 +239,10 @@ def resnet101(image, trainable=True):
 
 def deeplab_v3_plus(image, *, n_classes=7, trainable=True):
     """
-    DeepLabV3+ Model structure. Either Xception or ResNet101 Model is used as backbone with output stride=16.
-    In the last two blocks of Xception the striding is replaced by atrous convolutions with Multi Grid = (1, 2, 4) and
-    rates = (2, 4).
-    In ResNet the bottleneck modules have been replaced by Non-bt-1D Modules similar to ERFNet.
+    DeepLabV3+ Model structure. Either Xception or ResNet101 Model can be used as backbone with output stride=16.
     Number of parameters in Model (modified ResNet101): 34 107 958
-    Number of parameters in Model (Xception): 54 664 300
+    Number of parameters in Model (original ResNet101): 57 709 494
+    Number of parameters in Model (Xception): 63 004 110
 
     https://arxiv.org/pdf/1802.02611.pdf
 

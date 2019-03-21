@@ -8,6 +8,13 @@ from augmentations import flip_h, random_rotation, perform_augmentations, resize
 running = True
 
 
+"""
+This Class is very similar to the normal data_generation class. It was changed to perform data generation for a Training
+on the ImageNet dataset. The main differences are that the ground truth for ImageNet is different then for semantic 
+segmentation so it has to be handled differently.
+"""
+
+
 def worker_task(path, queue, use_augs, mean, std, class_mapping):
     """
     function that is performed on each data generation worker. Reads images and gt, normalizes the image if mean and
@@ -115,8 +122,6 @@ class DataGenerator:
         """
         with Pool(processes=self.n_processes) as pool:
             res = []
-            i = 0
-            #for path in self.path_list:
             for i in range(self.steps):
                 path = self.path_list[i % len(self.path_list)]
                 res.append(pool.apply_async(worker_task,

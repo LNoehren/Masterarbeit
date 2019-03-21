@@ -14,7 +14,6 @@ def segnet(image, *, n_classes=7, trainable=True):
     :param trainable: whether the variables of the model should be trainable or fixed
     :return: the output tensor of the model. After Softmax is applied
     """
-    use_max_unpooling=True
     with tf.variable_scope("segnet"):
 
         # encoder
@@ -48,47 +47,32 @@ def segnet(image, *, n_classes=7, trainable=True):
         dropout3 = spatial_dropout(pool5, 0.5, name="dropout3")
 
         # decoder
-        if use_max_unpooling:
-            upsample1 = max_unpooling(dropout3, index5, strides=(1, 2, 2, 1), name="upsample1")
-        else:
-            upsample1 = tf.layers.Conv2DTranspose(filters=512, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", trainable=trainable, name="up_conv1")(dropout3)
+        upsample1 = max_unpooling(dropout3, index5, strides=(1, 2, 2, 1), name="upsample1")
         conv6_1 = conv_bn(upsample1, filters=512, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv6_1")
         conv6_2 = conv_bn(conv6_1, filters=512, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv6_2")
         conv6_3 = conv_bn(conv6_2, filters=512, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv6_3")
 
         dropout4 = spatial_dropout(conv6_3, 0.5, name="dropout4")
 
-        if use_max_unpooling:
-            upsample2 = max_unpooling(dropout4, index4, strides=(1, 2, 2, 1), name="upsample2")
-        else:
-            upsample2 = tf.layers.Conv2DTranspose(filters=256, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", trainable=trainable, name="up_conv2")(dropout4)
+        upsample2 = max_unpooling(dropout4, index4, strides=(1, 2, 2, 1), name="upsample2")
         conv7_1 = conv_bn(upsample2, filters=256, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv7_1")
         conv7_2 = conv_bn(conv7_1, filters=256, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv7_2")
         conv7_3 = conv_bn(conv7_2, filters=256, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv7_3")
 
         dropout5 = spatial_dropout(conv7_3, 0.5, name="dropout5")
 
-        if use_max_unpooling:
-            upsample3 = max_unpooling(dropout5, index3, strides=(1, 2, 2, 1), name="upsample3")
-        else:
-            upsample3 = tf.layers.Conv2DTranspose(filters=128, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", trainable=trainable, name="up_conv3")(dropout5)
+        upsample3 = max_unpooling(dropout5, index3, strides=(1, 2, 2, 1), name="upsample3")
         conv8_1 = conv_bn(upsample3, filters=128, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv8_1")
         conv8_2 = conv_bn(conv8_1, filters=128, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv8_2")
         conv8_3 = conv_bn(conv8_2, filters=128, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv8_3")
 
         dropout6 = spatial_dropout(conv8_3, 0.5, name="dropout6")
 
-        if use_max_unpooling:
-            upsample4 = max_unpooling(dropout6, index2, strides=(1, 2, 2, 1), name="upsample4")
-        else:
-            upsample4 = tf.layers.Conv2DTranspose(filters=64, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", trainable=trainable, name="up_conv4")(dropout6)
+        upsample4 = max_unpooling(dropout6, index2, strides=(1, 2, 2, 1), name="upsample4")
         conv9_1 = conv_bn(upsample4, filters=64, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv9_1")
         conv9_2 = conv_bn(conv9_1, filters=64, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv9_2")
 
-        if use_max_unpooling:
-            upsample5 = max_unpooling(conv9_2, index1, strides=(1, 2, 2, 1), name="upsample5")
-        else:
-            upsample5 = tf.layers.Conv2DTranspose(filters=32, kernel_size=(3, 3), strides=(2, 2), padding="same", activation="relu", trainable=trainable, name="up_conv5")(conv9_2)
+        upsample5 = max_unpooling(conv9_2, index1, strides=(1, 2, 2, 1), name="upsample5")
         conv10_1 = conv_bn(upsample5, filters=32, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv10_1")
         conv10_2 = conv_bn(conv10_1, filters=32, kernel_size=(3, 3), padding="same", trainable=trainable, name="conv10_2")
 

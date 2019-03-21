@@ -64,7 +64,7 @@ class Configuration:
             String that specifies which Dataset was used for pre-training. Can either be Cityscapes, ImageNet, or None
             to use no pre-training.
 
-    Check the configs directory for example config files for the vocalfolds and cityscapes datasets.
+    Check the configs directory for example config files for the vocalfolds, electron microscopy and cityscapes dataset.
     """
     def __init__(self, config_path):
         with open(config_path, "r") as config:

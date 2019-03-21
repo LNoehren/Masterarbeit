@@ -8,6 +8,11 @@ from models.e_net import e_net
 from models.erfnet import erfnet
 from models.deeplab_v3_plus import deeplab_v3_plus
 
+"""
+This script can be used to test the inference of a trained model.
+"""
+
+
 width = 512
 height = 512
 n_classes = 6
@@ -17,7 +22,7 @@ load_path = "/home/lennard/PycharmProjects/tensorflow_vocalfolds/results/final_e
 path_list = get_file_list("/home/lennard/Datasets/vocalfolds-master/img/test")
 
 
-model = Model(width, height, n_classes, model_structure, class_weights, is_rgb=True)
+model = Model(height, width, n_classes, model_structure, class_weights, is_rgb=True)
 variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__)
 saver = tf.train.Saver(variables)
 
@@ -27,5 +32,5 @@ with tf.Session() as sess:
     saver.restore(sess, load_path)
 
     for path in tqdm(path_list):
-        image = read_image(path).reshape([1, width, height, 3])
+        image = read_image(path).reshape([1, height, width, 3])
         prediction = model.inference(sess, image)

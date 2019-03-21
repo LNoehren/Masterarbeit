@@ -46,7 +46,7 @@ def get_image_gt(img_path):
     """
     reads an image and the corresponding ground truth. The ground truth should have the same name as the image,
     except that 'img' will be replaced with 'annot' and 'leftImg8bit' will be replaced with
-    'gtFine_labelIds'(cityscapes)
+    'gtFine_labelIds'(cityscapes). The image will be transformed to RGB if it is gray scale.
 
     :param img_path: path to the image file
     :return: ndarrays of the image and ground truth
@@ -75,7 +75,8 @@ def write_image(img, path):
 
 def write_overlaid_result(net_out, gt, img, path, class_labels, image_size):
     """
-    converts the net out to a colored representation and writes the image overlaid with the net out.
+    converts the net out to a colored representation and writes the image overlaid with the net out. Wrong classified
+    points will be colored grey.
 
     :param net_out: the output of the Network
     :param gt: the correct ground truth for the image. If this is not None every wrong classified pixel will be gray
@@ -192,57 +193,6 @@ def weighted_categorical_cross_entropy(y_true, y_pred, class_weights=None):
             result *= tf.reduce_max(class_weights * y_true, axis=-1)
 
         return result
-
-
-def parametric_relu(x, trainable=True, name="prelu"):
-    """
-    prelu activation function. Like relu, but has a trainable weight for negative values. If weight is 1 prelu acts
-    like linear activation, if weight is 0 it acts like relu.
-
-    :param x: input for the activation function
-    :param trainable: whether the weight should be trainable or fixed
-    :param name: name for the weight. This should be a Unique name, unless the variable should be shared with
-                 other prelu layers
-    :return: result of the activation function
-    """
-    alpha = tf.get_variable(name, x.get_shape()[-1], initializer=tf.constant_initializer(0.0),
-                            dtype=tf.float32, trainable=trainable)
-
-    return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)
-
-
-def write_conf_mat(conf_mat, path):
-    """
-    writes a counfusion matrix for vocalfolds data to a log file. Is not used anywhere currently
-
-    :param conf_mat: ndarray containing the confusion matrix.
-    :param path: write path
-    """
-    classes = ["void", "vocal folds", "other tissue", "glottal space", "pathology", "surgical tool", "intubation"]
-    ious = []
-    for class_id in range(conf_mat.shape[0]):
-        tp = conf_mat[class_id, class_id]
-        fp = np.sum(conf_mat[class_id, :]) - tp
-        fn = np.sum(conf_mat[:, class_id]) - tp
-
-        ious.append(tp / (tp+fp+fn) if tp+fp+fn > 0 else 0.0)
-
-    with open(path, "w") as writer:
-        writer.write("Confusion Matrix:\n")
-        writer.write("\t")
-        for class_id in range(len(classes)):
-            writer.write(classes[class_id] + "\t")
-        writer.write("\n")
-
-        for y in range(conf_mat.shape[1]):
-            writer.write(classes[y] + "\t")
-            for x in range(conf_mat.shape[0]):
-                writer.write(str(conf_mat[x, y]) + "\t")
-            writer.write("\n")
-
-        writer.write("\nClass IOU's:\n")
-        for class_id in range(len(classes)):
-            writer.write(classes[class_id] + ": " + str(ious[class_id]) + "\n")
 
 
 def normalize_image(image, mean, std):

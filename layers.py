@@ -1,11 +1,10 @@
 import tensorflow as tf
 import numpy as np
-from utils import parametric_relu
 
 
 def max_unpooling(values, indices, strides, name="max_unpooling"):
     """
-    max-unpooling layer for segnet. Creates a sparse tensor with shape values.shape * strides
+    max-unpooling layer for SegNet. Creates a sparse tensor with shape values.shape * strides
 
     :param values: Input Tensor
     :param indices: Indices of max pooling
@@ -61,6 +60,17 @@ def bilinear_initializer(kernel_size, num_channels):
 
 
 def e_net_bottleneck(input, filters, dropout_rate, dilation=1, trainable=True, name="bottleneck"):
+    """
+    Standard bottleneck block for E-Net. The dilation rate is only used for the central convolution.
+
+    :param input: Input Tensor
+    :param filters: Number of filters for the convolutions
+    :param dropout_rate: dropout rate for the spatial dropout layer
+    :param dilation: dilation rate for the central convolution
+    :param trainable: whether all variables should be trainable or fixed
+    :param name: name of the block
+    :return: output tensor of the block
+    """
     with tf.variable_scope(name):
         small_filter = filters // 4
         conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
@@ -82,6 +92,17 @@ def e_net_bottleneck(input, filters, dropout_rate, dilation=1, trainable=True, n
 
 
 def asymmetric_e_net_bottleneck(input, filters, dropout_rate, dilation=1, trainable=True, name="bottleneck"):
+    """
+    Asymmetric bottleneck block for E-Net. The central convolution is replaced by a 5x1 and a 1x5 Convolution.
+
+    :param input: Input Tensor
+    :param filters: Number of filters for the convolutions
+    :param dropout_rate: dropout rate for the spatial dropout layer
+    :param dilation: dilation rate for the central convolution
+    :param trainable: whether all variables should be trainable or fixed
+    :param name: name of the block
+    :return: output tensor of the block
+    """
     with tf.variable_scope(name):
         small_filter = filters // 4
         conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
@@ -105,6 +126,17 @@ def asymmetric_e_net_bottleneck(input, filters, dropout_rate, dilation=1, traina
 
 
 def e_net_downsample(input, filters, dropout_rate, dilation=1, trainable=True, name="bottleneck"):
+    """
+    Downsampling bottleneck block for E-Net. Performs max pooling in the skip connections and returns the indices.
+
+    :param input: Input Tensor
+    :param filters: Number of filters for the convolutions
+    :param dropout_rate: dropout rate for the spatial dropout layer
+    :param dilation: dilation rate for the central convolution
+    :param trainable: whether all variables should be trainable or fixed
+    :param name: name of the block
+    :return: output tensor of the block, max pooling indices
+    """
     with tf.variable_scope(name):
         small_filter = filters // 4
         conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
@@ -130,6 +162,18 @@ def e_net_downsample(input, filters, dropout_rate, dilation=1, trainable=True, n
 
 
 def e_net_upsampling(input, filters, dropout_rate, upsampling_indices, dilation=1, trainable=True, name="bottleneck"):
+    """
+    Upsampling bottleneck block for E-Net. Performs max unpooling.
+
+    :param input: Input Tensor
+    :param filters: Number of filters for the convolutions
+    :param dropout_rate: dropout rate for the spatial dropout layer
+    :param upsampling_indices: max pooling indices of the corresponding downsampling block
+    :param dilation: dilation rate for the central convolution
+    :param trainable: whether all variables should be trainable or fixed
+    :param name: name of the block
+    :return: output tensor of the block
+    """
     with tf.variable_scope(name):
         small_filter = filters // 4
         conv1 = tf.layers.Conv2DTranspose(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
@@ -197,7 +241,7 @@ def non_bt_1d(input, filters, dilation_rate=1, trainable=True, name="non_bt_1D")
 
 def conv_bn(input, name, trainable=True, **kwargs):
     """
-    convolution layer, batch normalization layer, relu layer
+    convolution layer, batch normalization layer, relu layer in a row.
 
     :param input: input tensor
     :param name: name of the block
@@ -215,7 +259,7 @@ def conv_bn(input, name, trainable=True, **kwargs):
 
 def separable_conv_bn(input, name, trainable=True, **kwargs):
     """
-    separable convolution layer, batch normalization layer, relu layer
+    separable convolution layer, batch normalization layer, relu layer in a row.
 
     :param input: input tensor
     :param name: name of the block
@@ -233,7 +277,7 @@ def separable_conv_bn(input, name, trainable=True, **kwargs):
 
 def spatial_dropout(input, dropout_rate, name="dropout"):
     """
-    spatial Dropout layer. Drops whole filters instead of single values
+    spatial Dropout layer. Drops whole filters instead of single values.
 
     :param input: input tensor
     :param dropout_rate: percentage of filters that should bedropped
@@ -241,3 +285,21 @@ def spatial_dropout(input, dropout_rate, name="dropout"):
     :return: output of the dropout layer
     """
     return tf.layers.Dropout(dropout_rate, noise_shape=[1, tf.shape(input)[1], tf.shape(input)[2], 1], name=name)(input)
+
+
+def parametric_relu(x, trainable=True, name="prelu"):
+    """
+    prelu activation function. Like relu, but has a trainable weight for negative values. If weight is 1 prelu acts
+    like linear activation, if weight is 0 it acts like relu.
+
+    :param x: input for the activation function
+    :param trainable: whether the weight should be trainable or fixed
+    :param name: name for the weight. This should be a Unique name, unless the variable should be shared with
+                 other prelu layers
+    :return: result of the activation function
+    """
+    alpha = tf.get_variable(name, x.get_shape()[-1], initializer=tf.constant_initializer(0.0),
+                            dtype=tf.float32, trainable=trainable)
+
+    return tf.maximum(0.0, x) + alpha * tf.minimum(0.0, x)
+

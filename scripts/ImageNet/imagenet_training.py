@@ -10,6 +10,11 @@ from tqdm import tqdm
 from random import shuffle
 
 
+"""
+This script performs a training and validation on the ImageNet dataset. It doesn't support the config files,
+instead the parameters have to be set in the variables of the script.
+"""
+
 # script parameters
 dataset_path = "/home/lennard/Datasets/ImageNet/"
 class_dict_path = dataset_path + "ImageNet_classes.pkl"

@@ -1,6 +1,9 @@
 import cv2
 import os
 
+"""
+This script was used to resize the Cityscapes dataset, to speed up the training on the dataset
+"""
 
 # for root, dirs, files in os.walk("/home/lennard/Datasets/Cityscapes/leftImg8bit"):
 #     for file in files:

@@ -2,6 +2,11 @@ import pickle
 import scipy.io
 
 
+"""
+This script turns the imagenet metadata file into a python pickle file. The pickle file contains a dict with the fields
+'id' and 'name'.
+"""
+
 mat = scipy.io.loadmat('/home/lennard/Datasets/meta.mat')["synsets"]
 
 class_dict = {}

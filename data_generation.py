@@ -46,15 +46,16 @@ def worker_task(path, queue, use_augs, mean, std, class_mapping):
 
 class DataGenerator:
     """
-    Data Generator that reads data and performs pre-processing of the data in parallel for best performance.
+    Data Generator that reads data and performs pre-processing of the data in parallel for better performance.
     """
-    def __init__(self, path_list, batch_size, n_processes, normalization_params, use_augs=False, class_mapping=None, steps=None):
+    def __init__(self, path_list, batch_size, n_processes, normalization_params,
+                 use_augs=False, class_mapping=None, steps=None):
         """
         initializes varibles for Data Generation and starts the master thread, which supervises the data generation.
 
         :param path_list: list of paths to the images that should be read
         :param batch_size: batch size which i used by the network
-        :param n_processes: number of processes that should be used for data generation
+        :param n_processes: number of worker processes that should be used for data generation
         :param normalization_params: mean and std of the dataset if image normalization should be performed
         :param use_augs: whether or not the data should be augmented
         :param class_mapping: new class mapping for the ground truth if it should be changed
@@ -79,7 +80,7 @@ class DataGenerator:
 
     def __next__(self):
         """
-        returns the next image batch and ground truth batch form the queue
+        returns the next image batch and ground truth batch from the queue
 
         :return: image batch and gt batch
         """
