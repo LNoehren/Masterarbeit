@@ -60,57 +60,17 @@ def bilinear_initializer(kernel_size, num_channels):
     return tf.constant_initializer(value=weights, dtype=tf.float32)
 
 
-def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indices=None, dilation=1, asymmetric=False,
-               trainable=True, name="bottleneck"):
-    """
-    bottleneck block for e-net. It can perform downsampling or upsampling and can use normal, dilated or asymmetric
-    convolutions. Returns the output of the block and if downsampling was performed also the max_pooling indices.
-
-    :param input: input Tensor
-    :param filters: number of filters of the Convolutions
-    :param dropout_rate: dropout rate for the dropout layer
-    :param downsampling: whether or not the block should perform downsampling
-    :param upsampling_indices: Performs max_unpooling with these indices if they are not None
-    :param dilation: dilation rate of the convolution
-    :param asymmetric: whether the central convolution should be symmetric (3x3) or two asymmetric
-                       convolutions (5x1, 1x5)
-    :param trainable: whether all variables should be trainable or fixed
-    :param name: name of the block
-    :return: output of the bottleneck block
-    """
+def e_net_bottleneck(input, filters, dropout_rate, dilation=1, trainable=True, name="bottleneck"):
     with tf.variable_scope(name):
         small_filter = filters // 4
-
-        if downsampling:
-            conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
-
-            input, index = tf.nn.max_pool_with_argmax(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding="SAME", name="max_pool")
-            padding_size = (filters - input.get_shape().as_list()[-1])
-            input = tf.pad(input, tf.constant([[0, 0], [0, 0], [0, 0], [0, padding_size]]), "CONSTANT")
-
-        elif upsampling_indices is not None:
-            conv1 = tf.layers.Conv2DTranspose(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
-
-            input = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), padding="same", trainable=trainable, use_bias=False)(input)
-            input = max_unpooling(input, upsampling_indices, strides=(1, 2, 2, 1))
-            input = tf.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding="same", trainable=trainable, use_bias=False)(input)
-
-        else:
-            conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
-
+        conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
         conv1 = parametric_relu(conv1, trainable=trainable, name=name + "_conv1_prelu")
         bn1 = tf.layers.BatchNormalization(trainable=trainable, name="bn1")(conv1)
 
-        if asymmetric:
-            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(5, 1), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(bn1)
-            conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu1")
-            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 5), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(conv2)
-            conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu2")
-        else:
-            conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(3, 3), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(bn1)
-            conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu")
-
+        conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(3, 3), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(bn1)
+        conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu")
         bn2 = tf.layers.BatchNormalization(trainable=trainable, name="bn2")(conv2)
+
         conv3 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv3")(bn2)
 
         dropout = spatial_dropout(conv3, dropout_rate)
@@ -118,8 +78,78 @@ def bottleneck(input, filters, dropout_rate, downsampling=False, upsampling_indi
         out = input + dropout
         out = parametric_relu(out, trainable=trainable, name=name + "_out_prelu")
 
-        if downsampling:
-            return out, index
+        return out
+
+
+def asymmetric_e_net_bottleneck(input, filters, dropout_rate, dilation=1, trainable=True, name="bottleneck"):
+    with tf.variable_scope(name):
+        small_filter = filters // 4
+        conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
+        conv1 = parametric_relu(conv1, trainable=trainable, name=name + "_conv1_prelu")
+        bn1 = tf.layers.BatchNormalization(trainable=trainable, name="bn1")(conv1)
+
+        conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(5, 1), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(bn1)
+        conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu1")
+        conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(1, 5), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(conv2)
+        conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu2")
+        bn2 = tf.layers.BatchNormalization(trainable=trainable, name="bn2")(conv2)
+
+        conv3 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv3")(bn2)
+
+        dropout = spatial_dropout(conv3, dropout_rate)
+
+        out = input + dropout
+        out = parametric_relu(out, trainable=trainable, name=name + "_out_prelu")
+
+        return out
+
+
+def e_net_downsample(input, filters, dropout_rate, dilation=1, trainable=True, name="bottleneck"):
+    with tf.variable_scope(name):
+        small_filter = filters // 4
+        conv1 = tf.layers.Conv2D(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
+
+        input, index = tf.nn.max_pool_with_argmax(input, ksize=(1, 2, 2, 1), strides=(1, 2, 2, 1), padding="SAME", name="max_pool")
+        padding_size = (filters - input.get_shape().as_list()[-1])
+        input = tf.pad(input, tf.constant([[0, 0], [0, 0], [0, 0], [0, padding_size]]), "CONSTANT")
+        conv1 = parametric_relu(conv1, trainable=trainable, name=name + "_conv1_prelu")
+        bn1 = tf.layers.BatchNormalization(trainable=trainable, name="bn1")(conv1)
+
+        conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(3, 3), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(bn1)
+        conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu")
+        bn2 = tf.layers.BatchNormalization(trainable=trainable, name="bn2")(conv2)
+
+        conv3 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv3")(bn2)
+
+        dropout = spatial_dropout(conv3, dropout_rate)
+
+        out = input + dropout
+        out = parametric_relu(out, trainable=trainable, name=name + "_out_prelu")
+
+        return out, index
+
+
+def e_net_upsampling(input, filters, dropout_rate, upsampling_indices, dilation=1, trainable=True, name="bottleneck"):
+    with tf.variable_scope(name):
+        small_filter = filters // 4
+        conv1 = tf.layers.Conv2DTranspose(filters=small_filter, kernel_size=(2, 2), strides=(2, 2), use_bias=False, padding="same", trainable=trainable, name="conv1")(input)
+
+        input = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), padding="same", trainable=trainable, use_bias=False)(input)
+        input = max_unpooling(input, upsampling_indices, strides=(1, 2, 2, 1))
+        input = tf.layers.Conv2D(filters=filters, kernel_size=(3, 3), padding="same", trainable=trainable, use_bias=False)(input)
+        conv1 = parametric_relu(conv1, trainable=trainable, name=name + "_conv1_prelu")
+        bn1 = tf.layers.BatchNormalization(trainable=trainable, name="bn1")(conv1)
+
+        conv2 = tf.layers.Conv2D(filters=small_filter, kernel_size=(3, 3), padding="same", dilation_rate=dilation, trainable=trainable, name="conv2")(bn1)
+        conv2 = parametric_relu(conv2, trainable=trainable, name=name + "_conv2_prelu")
+        bn2 = tf.layers.BatchNormalization(trainable=trainable, name="bn2")(conv2)
+
+        conv3 = tf.layers.Conv2D(filters=filters, kernel_size=(1, 1), use_bias=False, padding="same", trainable=trainable, name="conv3")(bn2)
+
+        dropout = spatial_dropout(conv3, dropout_rate)
+
+        out = input + dropout
+        out = parametric_relu(out, trainable=trainable, name=name + "_out_prelu")
 
         return out
 
