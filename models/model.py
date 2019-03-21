@@ -9,7 +9,7 @@ class Model:
     If model structure is a list an ensemble model will be build. All sub-models in an ensemble model are set to
     un-trainable and only the weight tensor combining them will be trained.
     """
-    def __init__(self, width, height, n_classes, model_structure, class_weights=None, is_rgb=True):
+    def __init__(self, width, height, n_classes, model_structure, class_weights=None):
         """
         initializes the tensorflow variables
 
@@ -23,8 +23,7 @@ class Model:
 
         self.__name__ = model_structure.__name__ if not ensemble \
             else "-".join([model.__name__ for model in model_structure])
-        self.image = tf.placeholder(dtype=tf.float32, shape=(None, width, height, 3), name="image") if is_rgb else \
-            tf.placeholder(dtype=tf.float32, shape=(None, width, height, 1), name="image")
+        self.image = tf.placeholder(dtype=tf.float32, shape=(None, width, height, 3), name="image")
         self.y_true = tf.placeholder(dtype=tf.int32, shape=(None, width, height), name="gt")
         y_true_oh = tf.one_hot(self.y_true, n_classes, name="one_hot")
 

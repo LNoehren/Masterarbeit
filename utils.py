@@ -20,11 +20,12 @@ def get_file_list(root_path):
     return sorted(file_paths)
 
 
-def read_image(path):
+def read_image(path, transform_rgb=False):
     """
     reads the image with openCV and flips color channels to be in RGB order.
 
     :param path: path to the image file
+    :param transform_rgb: whether or not a gray scale image should be transformed to RGB after reading
     :return: ndarray of image
     :raises FileNotFoundError if the file couldn't be read
     """
@@ -35,7 +36,9 @@ def read_image(path):
 
     if len(img.shape) == 3:
         img = np.flip(img, 2)
-
+    else:
+        if transform_rgb:
+            img = np.stack([img, img, img], axis=2)
     return img
 
 
@@ -51,7 +54,7 @@ def get_image_gt(img_path):
     gt_path = img_path.replace("img", "annot")
     gt_path = gt_path.replace("leftImg8bit", "gtFine_labelIds")
 
-    img = read_image(img_path)
+    img = read_image(img_path, transform_rgb=True)
     gt = read_image(gt_path)
 
     return img, gt

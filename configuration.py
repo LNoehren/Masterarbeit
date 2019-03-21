@@ -63,8 +63,6 @@ class Configuration:
         - pre_training: default None
             String that specifies which Dataset was used for pre-training. Can either be Cityscapes, ImageNet, or None
             to use no pre-training.
-        - is_rgb : default True
-            whether the Dataset contains rgb- or grayscale-images.
 
     Check the configs directory for example config files for the vocalfolds and cityscapes datasets.
     """
@@ -74,7 +72,7 @@ class Configuration:
 
         supported_fields = ["model_structure", "dataset_path", "epochs", "learning_rate", "batch_sizes", "image_size",
                             "n_classes", "load_path", "use_augs", "class_weights", "n_processes", "debug",
-                            "normalization_params", "class_labels", "class_mapping", "pre_training", "is_rgb"]
+                            "normalization_params", "class_labels", "class_mapping", "pre_training"]
         for key in data.keys():
             if key not in supported_fields:
                 warnings.warn("Unknown Field in config file: {}: {}".format(key, data[key]), SyntaxWarning)
@@ -107,7 +105,6 @@ class Configuration:
             self.pre_training = self.pre_training.lower()
             assert not (self.pre_training is "cityscapes" or self.pre_training is "imagenet"),\
                 "pre_training parameter must either be cityscapes or imagenet, but is {}".format(self.pre_training)
-        self.is_rgb = data.get("is_rgb", True)
 
     def save_config(self, save_path):
         """

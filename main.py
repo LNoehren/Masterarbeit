@@ -20,7 +20,7 @@ def main(config):
     """
     # create Tensorflow model
     model = Model(config.image_size[0], config.image_size[1], config.n_classes,
-                  config.model_structure, config.class_weights, is_rgb=config.is_rgb)
+                  config.model_structure, config.class_weights)
 
     # number of trainable parameters
     number_of_params = np.sum([np.prod(var.get_shape().as_list()) for var in tf.trainable_variables()])
