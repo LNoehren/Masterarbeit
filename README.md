@@ -4,15 +4,15 @@ Code zur Masterarbeit **Entwicklung und Vergleich verschiedener deep learning Al
 zur semantischen Segmentierung eines Medizinischen Datensatzes** von Lennard Nöhren
 
 Um ein Training durchzuführen muss die _main.py_ Datei ausgeführt werden. Dabei muss als 
-Argument eine oder mehrere config yaml dateien angegeben werden. In dem Ordner _configs_ 
-sind einige Beispiel-configdateien bereitgestellt.
+Argument eine oder mehrere config yaml Datei angegeben werden. In dem Ordner _configs_ 
+sind einige Beispiel-Configdateien bereitgestellt.
 
 In der _Configuration_ Klasse ist im Detail beschrieben welche Felder in den config Dateien
 erlaubt sind.
 
 Unter anderem muss die Netzwerkarchitektur, die verwendet werden soll angegeben werden. In 
-dem _models_ Ordner sind die implementierungen der verschiedenen Architekturen enthalten. 
-Es steht U-Net, SegNet, E-Net, ERFNet und DeepLabV3+ zur Verfügung. Bei DeepLab kann 
+dem _models_ Ordner sind die Implementierungen der verschiedenen Architekturen enthalten. 
+Es stehen U-Net, SegNet, E-Net, ERFNet und DeepLabV3+ zur Verfügung. Bei DeepLab kann 
 außerdem das backbone Model ausgetauscht werden. Dafür stehen implementierungen von dem 
 originalen ResNet101, Xception und eine veränderte Version von ResNet101 in der 
 _deeplab_v3_plus_ Datei zu Verfügung.
@@ -24,7 +24,7 @@ dann die gewichtete Summe der einzelnen Netzwerke.
 
 Zum Training der Netzwerke gibt es eine abstrakte _Model_ Klasse, bei der die genutzte
 Architektur ausgetauscht werden kann. Es wird immer der Adam optimizer genutzt. Außerdem 
-wird eine gewichtete categorical cross entropy als loss Funktion und Intersection over 
+wird eine gewichtete categorical cross entropy als Loss Funktion und Intersection over 
 Union als Metrik verwendet.
 
 für das Einlesen der Trainingsdaten gibt es eine _data_generator_ Klasse. Diese liest die
@@ -40,7 +40,7 @@ für DeepLabV3+ unterstützt.
 Die Fortschritte des Trainings werden in einem Ergebnisordner unter 
 `results/<architektur>_<datum>_<startzeit>/` gespeichert. Es werden eine csv Datei, die 
 den Loss und die Metrik enthält, die config Datei die genutzt wurde, einige Histogramme, 
-Chekpoints von den Modellparametern und Daten für tensorboard gespeichert.
+Checkpoints von den Modellparametern und Daten für tensorboard gespeichert.
 
 Weitere Dateien:
 + _utils.py_: Enthällt verschiedene Hilfsfunktionen, z.B. Funktionen zum Einlesen von 

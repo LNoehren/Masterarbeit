@@ -22,7 +22,7 @@ load_path = "/home/lennard/PycharmProjects/tensorflow_vocalfolds/results/final_e
 path_list = get_file_list("/home/lennard/Datasets/vocalfolds-master/img/test")
 
 
-model = Model(height, width, n_classes, model_structure, class_weights, is_rgb=True)
+model = Model(height, width, n_classes, model_structure, class_weights)
 variables = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope=model.__name__)
 saver = tf.train.Saver(variables)
 

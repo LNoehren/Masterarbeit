@@ -1,8 +1,10 @@
+# This cofig performs a training of an ensemble of models on the vocal folds dataset
+
 model_structure:
-  #- unet
+  - unet
   #- enet
   - erfnet
-  - deeplab
+  #- deeplab
 dataset_path: /home/lennard/Datasets/vocalfolds_augmented_big/
 epochs: 3
 learning_rate: 1e-4
@@ -16,11 +18,7 @@ image_size:
 n_classes: 6
 class_weights: [0.35289383, 0.39340525, 1.39874843, 35.46317718, 5.05643017, 1.87683896]
 use_augs: False
-#normalization_params:
-#  - [160.99123017, 92.29408995, 72.23536678]
-#  - [59.28851215, 46.16065498, 43.67935978]
 class_labels:
-  #- [[105,105,105], "void"]
   - [[255,  0,  0], "vocal folds"]
   - [[  0,  0,255], "other tissue"]
   - [[  0,255,  0], "glottal space"]
@@ -29,7 +27,6 @@ class_labels:
   - [[255,255,  0], "intubation"]
 class_mapping: [-1, 0, 1, 2, 3, 4, 5]
 load_path:
-  #- results/best_results/u_net/pretrained_augs_big/saved_model/u_net.ckpt
-  #- results/best_results/e_net/pretrained_augs_big/saved_model/e_net.ckpt
-  - results/best_results/erfnet/pretrained_augs_big/saved_model/erfnet.ckpt
-  - results/best_results/deeplab/pretrained_augs_big/saved_model/deeplab_v3_plus.ckpt
+  - results/u_net_19-03-27_234311/saved_model/u_net.ckpt
+  - results/final_experiments/vocalfolds/augmentations/all/erfnet/erfnet_19-03-15_173756/saved_model/erfnet.ckpt
+  #- results/final_experiments/vocalfolds/augmentations/all/deeplab/deeplab_v3_plus_19-03-16_160608/saved_model/deeplab_v3_plus.ckpt

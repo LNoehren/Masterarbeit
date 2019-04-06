@@ -1,6 +1,8 @@
-model_structure: erfnet
+# This config file performs a training on the mitochondrial dataset
+
+model_structure: deeplab
 dataset_path: /home/lennard/Datasets/electron_microscopy/
-epochs: 50
+epochs: 30
 learning_rate: 1e-4
 batch_sizes:
   train: 1
@@ -10,10 +12,9 @@ image_size:
   - 768
   - 1024
 n_classes: 2
-class_weights: [0.1, 8.73221320017] #0.02862962622
+class_weights: [0.1, 8.73221320017]
 use_augs: False
 class_labels:
   - [[  0,  0,  0], "background"]
   - [[255,  255,  255], "mitochondria"]
-pre_training: cityscapes
-load_path: /home/lennard/PycharmProjects/tensorflow_vocalfolds/results/best_results/erfnet/cityscapes/saved_model/erfnet.ckpt
+load_path: results/final_experiments/electron_microscopy/pre-training/deeplab_cs/deeplab_v3_plus_19-03-24_103636/saved_model/deeplab_v3_plus.ckpt

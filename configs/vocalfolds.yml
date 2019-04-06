@@ -1,5 +1,7 @@
-model_structure: deeplab
-dataset_path: /home/lennard/Datasets/vocalfolds_flipped/
+# This cofog file performs a training on the vocal folds dataset, ignoring the void class
+
+model_structure: u_net
+dataset_path: /home/lennard/Datasets/vocalfolds_augmented_big/
 epochs: 100
 learning_rate: 1e-4
 batch_sizes:
@@ -10,10 +12,9 @@ image_size:
   - 512
   - 512
 n_classes: 6
-class_weights: [0.35289383, 0.39340525, 1.39874843, 35.46317718, 5.05643017, 1.87683896] # void: 6.63673196
+class_weights: [0.35289383, 0.39340525, 1.39874843, 35.46317718, 5.05643017, 1.87683896]
 use_augs: False
 class_labels:
-  #- [[105,105,105], "void"]
   - [[255,  0,  0], "vocal folds"]
   - [[  0,  0,255], "other tissue"]
   - [[  0,255,  0], "glottal space"]
@@ -21,5 +22,5 @@ class_labels:
   - [[255, 69,  0], "surgical tool"]
   - [[255,255,  0], "intubation"]
 class_mapping: [-1, 0, 1, 2, 3, 4, 5]
-pre_training: cityscapes
-load_path: /home/lennard/PycharmProjects/tensorflow_vocalfolds/results/best_results/deeplab/resnet_non_bt_cityscapes/saved_model/deeplab_v3_plus.ckpt
+#pre_training: cityscapes
+load_path: results/u_net_19-03-27_234311/saved_model/u_net.ckpt
